@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.support.ratis.statemachine.counter;
+package com.support.counter;
 
 import org.apache.ratis.protocol.Message;
 

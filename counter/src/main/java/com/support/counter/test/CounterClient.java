@@ -15,9 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.support.ratis.test;
+package com.support.counter.test;
 
-import com.support.ratis.statemachine.counter.CounterCommand;
+
+import com.support.counter.CounterCommand;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.protocol.RaftClientReply;

@@ -1,4 +1,4 @@
-package com.support.ratis.statemachine.counter;
+package com.support.counter;
 
 import com.support.ratis.conf.StateMachineProperties;
 import com.support.ratis.statemachine.StateMachineInit;

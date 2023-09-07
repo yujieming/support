@@ -1,4 +1,4 @@
-package com.support.ratis.test;
+package com.support.counter.test;
 
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.util.TimeDuration;
@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
-import static com.support.ratis.test.Constants.RAFT_GROUP;
+import static com.support.counter.test.Constants.RAFT_GROUP;
 import static org.apache.ratis.thirdparty.com.google.common.base.Charsets.UTF_8;
 
 public class Server3 {

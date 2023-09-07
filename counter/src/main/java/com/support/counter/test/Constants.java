@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.support.ratis.test;
+package com.support.counter.test;
 
 import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.support.ratis.test;
+package com.support.counter.test;
 
 import com.support.ratis.BaseStateMachineRegistry;
 import org.apache.ratis.conf.RaftProperties;

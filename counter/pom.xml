@@ -21,7 +21,6 @@
         <dependency>
             <groupId>com.support</groupId>
             <artifactId>ratis</artifactId>
-            <version>1.0.0</version>
         </dependency>
     </dependencies>
 

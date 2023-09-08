@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>ratis</artifactId>
+    <artifactId>example</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -20,27 +20,12 @@
     <dependencies>
         <dependency>
             <groupId>com.support</groupId>
-            <artifactId>extension</artifactId>
+            <artifactId>ratis</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.ratis</groupId>
-            <artifactId>ratis-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ratis</groupId>
-            <artifactId>ratis-netty</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ratis</groupId>
-            <artifactId>ratis-grpc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
+            <groupId>com.support</groupId>
+            <artifactId>counter</artifactId>
         </dependency>
     </dependencies>
+
 </project>

@@ -12,6 +12,7 @@
         <module>ratis</module>
         <module>extension</module>
         <module>counter</module>
+        <module>example</module>
     </modules>
 
     <properties>
@@ -37,6 +38,23 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.support</groupId>
+                <artifactId>ratis</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.support</groupId>
+                <artifactId>extension</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.support</groupId>
+                <artifactId>counter</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
+
+
             <dependency>
                 <groupId>org.apache.ratis</groupId>
                 <artifactId>ratis-server</artifactId>

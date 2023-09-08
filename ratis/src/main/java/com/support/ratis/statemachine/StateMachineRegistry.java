@@ -1,4 +1,4 @@
-package com.support.ratis;
+package com.support.ratis.statemachine;
 
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.statemachine.StateMachine;

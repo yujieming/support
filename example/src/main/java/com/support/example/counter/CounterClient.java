@@ -15,13 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.support.counter.test;
+package com.support.example.counter;
 
 
 import com.support.counter.CounterCommand;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.RaftProperties;
+import org.apache.ratis.protocol.GroupInfoReply;
+import org.apache.ratis.protocol.GroupListReply;
 import org.apache.ratis.protocol.RaftClientReply;
+import org.apache.ratis.protocol.RaftPeer;
+import org.apache.ratis.thirdparty.io.grpc.Status;
+import org.apache.ratis.thirdparty.io.grpc.StatusException;
+import org.apache.ratis.thirdparty.io.grpc.StatusRuntimeException;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,6 +38,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import static com.support.example.counter.Constants.PEERS;
+import static com.support.example.counter.Constants.RAFT_GROUP;
 
 /**
  * Counter client application, this application sends specific number of
@@ -45,7 +54,7 @@ public final class CounterClient implements Closeable {
     //build the client
     private final RaftClient client = RaftClient.newBuilder()
             .setProperties(new RaftProperties())
-            .setRaftGroup(Constants.RAFT_GROUP)
+            .setRaftGroup(RAFT_GROUP)
             .build();
 
 
@@ -98,8 +107,8 @@ public final class CounterClient implements Closeable {
         // using Linearizable Read
         futures.clear();
         final long startTime = System.currentTimeMillis();
-        final ExecutorService executor = Executors.newFixedThreadPool(Constants.PEERS.size());
-        Constants.PEERS.forEach(p -> {
+        final ExecutorService executor = Executors.newFixedThreadPool(PEERS.size());
+        PEERS.forEach(p -> {
             final Future<RaftClientReply> f = CompletableFuture.supplyAsync(() -> {
                 try {
                     return client.io().sendReadOnly(CounterCommand.GET.getMessage(), p.getId());
@@ -128,6 +137,25 @@ public final class CounterClient implements Closeable {
 
     public static void main(String[] args) {
         try (CounterClient client = new CounterClient()) {
+            for (RaftPeer peer : PEERS) {
+                do {
+                    try{
+                        GroupInfoReply info = client.client.getGroupManagementApi(peer.getId())
+                                .info(RAFT_GROUP.getGroupId());
+                        System.out.println(info);
+                        break;
+                    }catch (StatusRuntimeException e){
+                        Status status = e.getStatus();
+                        if(status.getDescription().contains("not found")){
+                            client.client.getGroupManagementApi(peer.getId())
+                                    .add(RAFT_GROUP);
+                            break;
+                        }
+                    }
+                } while (true);
+            }
+//            RaftClientReply raftClientReply = client.client.admin().setConfiguration(PEERS);
+
             //the number of INCREMENT commands, default is 10
             final int increment = 10;
             final boolean io = true;

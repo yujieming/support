@@ -11,9 +11,9 @@
     <modules>
         <module>ratis</module>
         <module>extension</module>
-        <module>counter</module>
-        <module>example</module>
-        <module>filestore</module>
+        <module>sample/counter</module>
+        <module>sample/example</module>
+        <module>sample/filestore</module>
     </modules>
 
     <properties>

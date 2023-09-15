@@ -20,7 +20,9 @@ logs
 mvnw
 mvnw.cmd
 
+*.class
 */target/
 /n0/
 /n1/
 /n2/
+*/*/target

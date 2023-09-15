@@ -14,6 +14,7 @@
         <module>sample/counter</module>
         <module>sample/example</module>
         <module>sample/filestore</module>
+        <module>meta-store</module>
     </modules>
 
     <properties>

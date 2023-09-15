@@ -4,6 +4,7 @@ import com.support.ratis.statemachine.StateMachineType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public interface StateMachineConfigKeys {
@@ -15,8 +16,6 @@ public interface StateMachineConfigKeys {
 
     String PREFIX = "support.statemachine";
 
-//    String RAFT_GROUP_ID_KEY = PREFIX + ".groupId";
-
     String RAFT_STATEMACHINE_TYPE = PREFIX + ".type";
 
     StateMachineType RAFT_STATEMACHINE_TYPE_DEFAULT = null;
@@ -27,6 +26,18 @@ public interface StateMachineConfigKeys {
 
     static void setStatemachineType(StateMachineProperties properties, StateMachineType stateMachineType) {
         properties.set(RAFT_STATEMACHINE_TYPE, stateMachineType);
+    }
+
+    String RAFT_STATEMACHINE_WRAPPER = PREFIX + ".wrapper";
+
+    Object RAFT_STATEMACHINE_WRAPPER_DEFAULT = null;
+
+    static <T> T wrapper(StateMachineProperties properties, Class<T> tClass) {
+        return properties.get(RAFT_STATEMACHINE_WRAPPER, null, tClass);
+    }
+
+    static <T> void setWrapper(StateMachineProperties properties, T value) {
+        properties.set(RAFT_STATEMACHINE_WRAPPER, value);
     }
 
 }

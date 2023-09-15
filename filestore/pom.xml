@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>example</artifactId>
+    <artifactId>filestore</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -22,14 +22,5 @@
             <groupId>com.support</groupId>
             <artifactId>ratis</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.support</groupId>
-            <artifactId>counter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.support</groupId>
-            <artifactId>filestore</artifactId>
-        </dependency>
     </dependencies>
-
 </project>

@@ -1,6 +1,7 @@
 package com.support.example.counter;
 
 import com.support.ratis.BaseServer;
+import com.support.ratis.conf.RaftConfigKeys;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.protocol.RaftPeer;
@@ -51,8 +52,7 @@ public class Server {
         final int port = NetUtils.createSocketAddr(peer.getAddress()).getPort();
         GrpcConfigKeys.Server.setPort(properties, port);
 
-        properties.set("RaftPeerId",peer.getId().toString());
-
+        RaftConfigKeys.setRaftPeerId(properties, peer.getId());
         return properties;
     }
 }

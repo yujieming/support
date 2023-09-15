@@ -1,5 +1,6 @@
 package com.support.ratis;
 
+import com.support.ratis.conf.RaftConfigKeys;
 import com.support.ratis.statemachine.BaseStateMachineRegistry;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.protocol.RaftGroup;
@@ -25,6 +26,12 @@ public class BaseServer implements RatisServer, Function<RaftGroupId, StateMachi
     private volatile AtomicReference<BaseStateMachineRegistry> registry = new AtomicReference<>();
 
 
+    /**
+     * need {@link RaftConfigKeys#setRaftPeerId(RaftProperties, RaftPeerId)}
+     *
+     * @param raftProperties
+     * @throws IOException
+     */
     public BaseServer(RaftProperties raftProperties) throws IOException {
         this(raftProperties, null, null);
     }
@@ -44,7 +51,7 @@ public class BaseServer implements RatisServer, Function<RaftGroupId, StateMachi
         if (Objects.nonNull(raftGroup)) {
             builder.setGroup(raftGroup);
         }
-        RaftPeerId raftPeerId = RaftPeerId.getRaftPeerId(raftProperties.get("RaftPeerId"));
+        RaftPeerId raftPeerId = RaftConfigKeys.raftPeerId(raftProperties);
         builder.setServerId(raftPeerId);
         this.server = builder.setProperties(raftProperties)
                 .setStateMachineRegistry(this::apply)

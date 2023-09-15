@@ -13,6 +13,7 @@
         <module>extension</module>
         <module>counter</module>
         <module>example</module>
+        <module>filestore</module>
     </modules>
 
     <properties>
@@ -54,6 +55,11 @@
                 <version>${project.support.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.support</groupId>
+                <artifactId>filestore</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.ratis</groupId>

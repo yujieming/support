@@ -2,6 +2,8 @@ package com.support.meta.store;
 
 public class Bucket<K, V> {
 
+    public static final Bucket EMPTY = new Bucket(null, null);
+
     private K key;
     private V value;
 
@@ -10,11 +12,19 @@ public class Bucket<K, V> {
         this.value = value;
     }
 
-    K getKey() {
+    public K getKey() {
         return key;
     }
 
-    V getValue() {
+    public V getValue() {
         return value;
+    }
+
+    @Override
+    public String toString() {
+        return "Bucket{" +
+                "key=" + key +
+                ", value=" + value +
+                '}';
     }
 }

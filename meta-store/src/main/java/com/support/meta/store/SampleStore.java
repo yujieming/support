@@ -1,11 +1,10 @@
 package com.support.meta.store;
 
 import org.apache.ratis.thirdparty.com.google.common.collect.Lists;
-import org.apache.ratis.thirdparty.io.grpc.internal.JsonUtil;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class SampleStore<V> extends BaseStore<String, V> {
 
@@ -40,6 +39,11 @@ public class SampleStore<V> extends BaseStore<String, V> {
     @Override
     protected Iterator<Bucket<String, V>> doScan(String keyPrefix) {
         return new Itr(keyPrefix, Collections.unmodifiableList(Lists.newArrayList(store.keySet())));
+    }
+
+    @Override
+    public void close() throws IOException {
+        this.store = null;
     }
 
     private class Itr implements Iterator<Bucket<String, V>> {

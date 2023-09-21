@@ -1,21 +1,19 @@
 package com.support.meta.statemachine;
 
 import com.support.ratis.statemachine.StateMachineType;
-import org.rocksdb.RocksDB;
 
 import java.util.UUID;
 
-public class CounterStateMachineType implements StateMachineType {
+public class MetaStoreStateMachineType implements StateMachineType {
 
-    public static final String TYPE = "counter";
+    public static final String TYPE = "meta";
 
-    RocksDB db;
-    public static final String MATCH = "00000";
+    public static final String MATCH = "00001";
 
     @Override
     public boolean match(UUID uuid) {
         String prefix = uuid.toString().split("-")[0];
-        if(prefix.startsWith(MATCH)){
+        if (prefix.startsWith(MATCH)) {
             return true;
         }
         return false;
@@ -34,6 +32,6 @@ public class CounterStateMachineType implements StateMachineType {
 
     @Override
     public Integer order() {
-        return 0;
+        return 1;
     }
 }

@@ -6,11 +6,10 @@
         <artifactId>support</artifactId>
         <groupId>com.support</groupId>
         <version>1.0.0</version>
-        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>example</artifactId>
+    <artifactId>ratis-client</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -21,20 +20,19 @@
     <dependencies>
         <dependency>
             <groupId>com.support</groupId>
-            <artifactId>ratis</artifactId>
+            <artifactId>ratis-proto</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.support</groupId>
-            <artifactId>counter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.support</groupId>
-            <artifactId>filestore</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.support</groupId>
+            <groupId>org.apache.ratis</groupId>
             <artifactId>ratis-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+        </dependency>
     </dependencies>
-
 </project>

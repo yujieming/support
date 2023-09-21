@@ -1,6 +1,5 @@
 package com.support.meta.store.rocksdb;
 
-import com.support.meta.store.SampleStore;
 import com.support.meta.store.Store;
 import com.support.ratis.conf.RaftConfigKeys;
 import com.support.ratis.conf.StateMachineProperties;
@@ -60,7 +59,7 @@ public interface RocksConfigKeys {
         set(properties::set, ROCKS_OPTIONS, options);
     }
 
-    String STORE = PREFIX + ".options";
+    String STORE = PREFIX + ".store";
 
     static Store store(StateMachineProperties properties) {
         return properties.get(STORE, null, Store.class);

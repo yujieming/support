@@ -1,7 +1,5 @@
 package com.support.meta.store;
 
-import org.rocksdb.RocksDBException;
-
 import java.util.Iterator;
 import java.util.Objects;
 

@@ -1,14 +1,12 @@
 
-package com.support.example.counter;
+package com.support.example.counterV2;
 
 
 import com.support.counter.CounterCommand;
-import com.support.ratis.proto.CommandProtos;
+import com.support.ratis.client.RatisClient;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.protocol.GroupInfoReply;
-import org.apache.ratis.protocol.Message;
-import org.apache.ratis.protocol.RaftClientReply;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.thirdparty.io.grpc.Status;
@@ -42,6 +40,7 @@ public final class CounterSupportClient implements Closeable {
             .setRaftGroup(RAFT_GROUP)
             .build();
 
+    private final RatisClient ratisClient = new RatisClient(client);
 
     @Override
     public void close() throws IOException {
@@ -52,43 +51,46 @@ public final class CounterSupportClient implements Closeable {
 
         System.out.printf("Sending %d %s command(s) using the %s ...%n",
                 increment, CounterCommand.INCREMENT, blocking ? "BlockingApi" : "AsyncApi");
-        final List<Future<RaftClientReply>> futures = new ArrayList<>(increment);
-
+        final List<Future<ByteString>> futures = new ArrayList<>(increment);
 
         //send INCREMENT command(s)
         if (blocking) {
             // use BlockingApi
             final ExecutorService executor = Executors.newFixedThreadPool(10);
             for (int i = 0; i < increment; i++) {
-                final Future<RaftClientReply> f = executor.submit(
-                        () -> client.io().send(Message.valueOf(write())));
+                final Future<ByteString> f = executor.submit(() -> ratisClient.write(write()));
                 futures.add(f);
             }
             executor.shutdown();
         } else {
             // use AsyncApi
             for (int i = 0; i < increment; i++) {
-                final Future<RaftClientReply> f = client.async().send(Message.valueOf(write()));
+//                final Future<RaftClientReply> f = client.async().send(Message.valueOf(write()));
+                final Future<ByteString> f = ratisClient.writeAsync(write());
                 futures.add(f);
             }
         }
 
         //wait for the futures
-        for (Future<RaftClientReply> f : futures) {
-            final RaftClientReply reply = f.get();
-            if (reply.isSuccess()) {
-                final CommandProtos.Reply response = CommandProtos.Reply.parseFrom(reply.getMessage().getContent());
-
-                final String count = response.getContent().toStringUtf8();
-                System.out.println("Counter is incremented to " + count);
-            } else {
-                System.err.println("Failed " + reply);
-            }
+        for (Future<ByteString> f : futures) {
+            final ByteString reply = f.get();
+//            ByteString content = response.getContent();
+            final String count = reply.toStringUtf8();
+            System.out.println("Counter is incremented to " + count);
+//            if (reply.isSuccess()) {
+//                final CommandProtos.Reply response = CommandProtos.Reply.parseFrom(reply.getMessage().getContent());
+//
+//                final String count = response.getContent().toStringUtf8();
+//                System.out.println("Counter is incremented to " + count);
+//            } else {
+//                System.err.println("Failed " + reply);
+//            }
         }
 
         //send a GET command and print the reply
-        final RaftClientReply reply = client.io().sendReadOnly(Message.valueOf(read()));
-        final String count = CommandProtos.Reply.parseFrom(reply.getMessage().getContent()).getContent().toStringUtf8();
+        ByteString read = ratisClient.read(read());
+//        final RaftClientReply reply = client.io().sendReadOnly(Message.valueOf(read()));
+        final String count = read.toStringUtf8();
         System.out.println("Current counter value: " + count);
 
         // using Linearizable Read
@@ -96,28 +98,24 @@ public final class CounterSupportClient implements Closeable {
         final long startTime = System.currentTimeMillis();
         final ExecutorService executor = Executors.newFixedThreadPool(PEERS.size());
         PEERS.forEach(p -> {
-            final Future<RaftClientReply> f = CompletableFuture.supplyAsync(() -> {
+            final Future<ByteString> f = CompletableFuture.supplyAsync(() -> {
                 try {
-                    return client.io().sendReadOnly(Message.valueOf(read()), p.getId());
+                    return ratisClient.read(read(), p.getId());
                 } catch (IOException e) {
                     System.err.println("Failed read-only request");
-                    return RaftClientReply.newBuilder().setSuccess(false).build();
+                    return ByteString.copyFromUtf8("error");
                 }
             }, executor).whenCompleteAsync((r, ex) -> {
-                if (ex != null || !r.isSuccess()) {
-                    System.err.println("Failed " + r);
-                    return;
-                }
                 final long endTime = System.currentTimeMillis();
                 final long elapsedSec = (endTime - startTime) / 1000;
-                final String countValue = r.getMessage().getContent().toStringUtf8();
+                final String countValue = r.toStringUtf8();
                 System.out.println("read from " + p.getId() + " and get counter value: " + countValue
                         + ", time elapsed: " + elapsedSec + " seconds");
             });
             futures.add(f);
         });
 
-        for (Future<RaftClientReply> f : futures) {
+        for (Future<ByteString> f : futures) {
             f.get();
         }
     }
@@ -126,14 +124,14 @@ public final class CounterSupportClient implements Closeable {
         try (CounterSupportClient client = new CounterSupportClient()) {
             for (RaftPeer peer : PEERS) {
                 do {
-                    try{
+                    try {
                         GroupInfoReply info = client.client.getGroupManagementApi(peer.getId())
                                 .info(RAFT_GROUP.getGroupId());
                         System.out.println(info);
                         break;
-                    }catch (StatusRuntimeException e){
+                    } catch (StatusRuntimeException e) {
                         Status status = e.getStatus();
-                        if(status.getDescription().contains("not found")){
+                        if (status.getDescription().contains("not found")) {
                             client.client.getGroupManagementApi(peer.getId())
                                     .add(RAFT_GROUP);
                             break;
@@ -162,19 +160,13 @@ public final class CounterSupportClient implements Closeable {
     }
 
 
-    private CommandProtos.CommandRequest read(){
-        CommandProtos.CommandRequest request = CommandProtos.CommandRequest.newBuilder()
-                .setRead(CommandProtos.ReadOnlyRequest.newBuilder()
-                        .setContent(CounterCommand.GET.getMessage().getContent())
-                ).build();
-        return request;
+    private ByteString read() {
+        ByteString content = CounterCommand.GET.getMessage().getContent();
+        return content;
     }
 
-    private CommandProtos.CommandRequest write(){
-        CommandProtos.CommandRequest request = CommandProtos.CommandRequest.newBuilder()
-                .setWrite(CommandProtos.WriteRequest.newBuilder()
-                        .setContent(CounterCommand.INCREMENT.getMessage().getContent())
-                ).build();
-        return request;
+    private ByteString write() {
+        ByteString content = CounterCommand.INCREMENT.getMessage().getContent();
+        return content;
     }
 }

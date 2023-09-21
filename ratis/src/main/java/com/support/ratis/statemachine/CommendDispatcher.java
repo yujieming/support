@@ -11,14 +11,19 @@ public interface CommendDispatcher {
 
     default CompletableFuture<Reply> dispatch(CommandRequest request) {
         CompletableFuture<ByteString> result = null;
-        switch (request.getRequestCase()) {
-            case READ:
-                result = readOnly(request.getRead().getContent());
-                break;
-            case WRITE:
-                result = write(request.getWrite().getContent());
-                break;
+        try {
+            switch (request.getRequestCase()) {
+                case READ:
+                    result = readOnly(request.getRead().getContent());
+                    break;
+                case WRITE:
+                    result = write(request.getWrite().getContent());
+                    break;
+            }
+        } catch (Exception e) {
+            return JavaUtils.completeExceptionally(e);
         }
+
         if (Objects.isNull(result)) {
             return JavaUtils.completeExceptionally(new IllegalArgumentException("Invalid Command: " + request.getRequestCase()));
         }

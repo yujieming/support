@@ -14,36 +14,57 @@ import static com.support.meta.store.OperateType.TIMEOUT;
 
 public class BaseWatchSupport<K, V> implements WatchSupport<K, V> {
 
-    private WatchTaskContainer container = new WatchTaskContainer();
+    private final WatchTaskContainer container;
+
+    private boolean watch = false;
 
     public BaseWatchSupport() {
+        this(false);
+    }
 
+    public BaseWatchSupport(boolean watch) {
+        this.watch = watch;
+        if (watch) {
+            container = new WatchTaskContainer();
+        } else {
+            container = null;
+        }
     }
 
     @Override
     public void watchOnce(K key, WatchHandler<K, V> handler) {
-        container.watch(new WatchTask(key, handler, Long.MAX_VALUE));
+        if (watch) {
+            container.watch(new WatchTask(key, handler, Long.MAX_VALUE));
+        }
     }
 
     @Override
     public void watchOnce(K key, WatchHandler<K, V> handler, long time, TimeUnit unit) {
-        long deadline = System.nanoTime() + unit.toNanos(time);
-        container.watch(new WatchTask(key, handler, deadline));
+        if (watch) {
+            long deadline = System.nanoTime() + unit.toNanos(time);
+            container.watch(new WatchTask(key, handler, deadline));
+        }
     }
 
     @Override
     public void watch(K key, WatchHandler<K, V> handler) {
-        container.watch(new WatchTask(key, handler));
+        if (watch) {
+            container.watch(new WatchTask(key, handler));
+        }
     }
 
     @Override
     public void unWatch(K key) {
-        container.unWatch(key);
+        if (watch) {
+            container.unWatch(key);
+        }
     }
 
 
     protected void trigger(OperateType type, K key, V value) {
-        container.trigger(type, key, value);
+        if (watch) {
+            container.trigger(type, key, value);
+        }
     }
 
     private static class WatchTask<K, V> implements Runnable, Comparable<WatchTask<K, V>> {

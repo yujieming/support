@@ -4,6 +4,7 @@ import com.support.meta.store.BaseStore;
 import com.support.meta.store.Bucket;
 import com.support.meta.store.OperateType;
 import com.support.ratis.conf.StateMachineProperties;
+import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.util.FileUtils;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
@@ -17,7 +18,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Objects;
 
-public class RocksStore extends BaseStore<String, String> {
+public class RocksStore extends BaseStore<ByteString, ByteString> {
 
     Logger LOG = LoggerFactory.getLogger(RocksStore.class);
 
@@ -36,7 +37,7 @@ public class RocksStore extends BaseStore<String, String> {
         String dir = RocksConfigKeys.rocksDir(properties);
         LOG.info("init rocksdb dir : " + path + dir);
         File file = new File(path + dir);
-        if(!file.exists()){
+        if (!file.exists()) {
             try {
                 FileUtils.createDirectories(file);
             } catch (IOException e) {
@@ -45,25 +46,25 @@ public class RocksStore extends BaseStore<String, String> {
         }
         try {
             rocksDB = RocksDB.open(options, path + dir);
+            RocksConfigKeys.setStore(properties, this);
         } catch (RocksDBException e) {
             LOG.error("init RocksDB error", e);
         }
     }
 
-
     @Override
-    protected boolean doExist(String key) {
-        return rocksDB.keyMayExist(key.getBytes(), new StringBuilder());
+    protected boolean doExist(ByteString key) {
+        return rocksDB.keyMayExist(key.toByteArray(), new StringBuilder());
     }
 
     @Override
-    protected void doPut(String key, String value) {
+    protected void doPut(ByteString key, ByteString value) {
         OperateType type = OperateType.UPDATE;
         if (!exist(key)) {
             type = OperateType.CREATE;
         }
         try {
-            rocksDB.put(key.getBytes(), value.getBytes());
+            rocksDB.put(key.toByteArray(), value.toByteArray());
         } catch (RocksDBException e) {
             LOG.error("put value error", e);
             throw new RuntimeException(e.getCause());
@@ -72,13 +73,13 @@ public class RocksStore extends BaseStore<String, String> {
     }
 
     @Override
-    protected String doGet(String key) {
+    protected ByteString doGet(ByteString key) {
         try {
-            byte[] bytes = rocksDB.get(key.getBytes());
+            byte[] bytes = rocksDB.get(key.toByteArray());
             if (Objects.isNull(bytes)) {
                 return null;
             }
-            return new String(bytes);
+            return ByteString.copyFrom(bytes);
         } catch (RocksDBException e) {
             LOG.error("get value error", e);
             throw new RuntimeException(e.getCause());
@@ -86,9 +87,9 @@ public class RocksStore extends BaseStore<String, String> {
     }
 
     @Override
-    protected void doDelete(String key) {
+    protected void doDelete(ByteString key) {
         try {
-            rocksDB.delete(key.getBytes());
+            rocksDB.delete(key.toByteArray());
         } catch (RocksDBException e) {
             LOG.error("delete value error", e);
             throw new RuntimeException(e.getCause());
@@ -96,19 +97,23 @@ public class RocksStore extends BaseStore<String, String> {
     }
 
     @Override
-    protected Iterator<Bucket<String, String>> doScan(String keyPrefix) {
+    protected Iterator<Bucket<ByteString, ByteString>> doScan(ByteString keyPrefix) {
         return new Itr(keyPrefix);
     }
 
+    @Override
+    public void close() throws IOException {
+        rocksDB.close();
+    }
 
-    private class Itr implements Iterator<Bucket<String, String>> {
 
+    private class Itr implements Iterator<Bucket<ByteString, ByteString>> {
 
         private RocksIterator rocksIterator;
 
-        public Itr(String keyPrefix) {
+        public Itr(ByteString keyPrefix) {
             rocksIterator = rocksDB.newIterator();
-            rocksIterator.seek(keyPrefix.getBytes());
+            rocksIterator.seek(keyPrefix.toByteArray());
         }
 
 
@@ -121,13 +126,13 @@ public class RocksStore extends BaseStore<String, String> {
         }
 
         @Override
-        public Bucket<String, String> next() {
+        public Bucket<ByteString, ByteString> next() {
             byte[] keyBytes = rocksIterator.key();
             byte[] valueBytes = rocksIterator.value();
             rocksIterator.next();
-            String key = new String(keyBytes);
-            String value = new String(valueBytes);
-            return new Bucket(key, value);
+            ByteString key = ByteString.copyFrom(keyBytes);
+            ByteString value = ByteString.copyFrom(valueBytes);
+            return new Bucket<ByteString, ByteString>(key, value);
         }
     }
 
@@ -135,26 +140,26 @@ public class RocksStore extends BaseStore<String, String> {
     public static void main(String[] args) {
         RocksStore rocksStore = new RocksStore(new StateMachineProperties());
 
-        rocksStore.watch("1", obj -> {
+        rocksStore.watch(ByteString.copyFromUtf8("1"), obj -> {
             System.out.println(obj.toString());
         });
 
-        rocksStore.watchOnce("2", obj -> {
+        rocksStore.watchOnce(ByteString.copyFromUtf8("2"), obj -> {
             System.out.println(obj.toString());
         });
 
-        rocksStore.put("1", "1");
-        rocksStore.put("1", "2");
-        rocksStore.put("1", "3");
-        rocksStore.delete("1");
-        rocksStore.put("2", "2");
-        rocksStore.delete("2");
-        rocksStore.put("3", "3");
-        rocksStore.put("4", "4");
-        rocksStore.put("41", "4212");
-        rocksStore.put("42", "42113");
+        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("1"));
+        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("2"));
+        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("3"));
+        rocksStore.delete(ByteString.copyFromUtf8("1"));
+        rocksStore.put(ByteString.copyFromUtf8("2"), ByteString.copyFromUtf8("2"));
+        rocksStore.delete(ByteString.copyFromUtf8("2"));
+        rocksStore.put(ByteString.copyFromUtf8("3"), ByteString.copyFromUtf8("3"));
+        rocksStore.put(ByteString.copyFromUtf8("4"), ByteString.copyFromUtf8("4"));
+        rocksStore.put(ByteString.copyFromUtf8("41"), ByteString.copyFromUtf8("4212"));
+        rocksStore.put(ByteString.copyFromUtf8("42"), ByteString.copyFromUtf8("42113"));
 
-        Iterator<Bucket<String, String>> scan = rocksStore.scan("4");
+        Iterator<Bucket<ByteString, ByteString>> scan = rocksStore.scan(ByteString.copyFromUtf8("4"));
         scan.forEachRemaining(stringStringBucket -> {
             System.out.println(stringStringBucket.getKey() + " --> " + stringStringBucket.getValue());
         });

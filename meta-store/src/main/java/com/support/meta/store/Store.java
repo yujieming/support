@@ -1,8 +1,9 @@
 package com.support.meta.store;
 
+import java.io.Closeable;
 import java.util.Iterator;
 
-public interface Store<K, V>  {
+public interface Store<K, V> extends Closeable {
 
     boolean exist(K key);
 

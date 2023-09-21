@@ -1,1 +1,1 @@
-counter=com.support.counter.CounterStateMachineType
+meta=com.support.meta.statemachine.MetaStoreStateMachineType

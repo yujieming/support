@@ -1,1 +1,1 @@
-counter=com.support.counter.CounterStateMachineInit
+meta=com.support.meta.statemachine.MetaStoreStateMachineInit

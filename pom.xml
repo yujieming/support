@@ -15,6 +15,8 @@
         <module>sample/example</module>
         <module>sample/filestore</module>
         <module>meta-store</module>
+        <module>ratis-client</module>
+        <module>ratis-proto</module>
     </modules>
 
     <properties>
@@ -22,6 +24,7 @@
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.ratis.version>2.5.1</project.ratis.version>
+        <project.ratis.thirdparty.version>1.0.4</project.ratis.thirdparty.version>
         <project.log4j.version>2.0.7</project.log4j.version>
         <project.support.version>${version}</project.support.version>
 
@@ -61,6 +64,21 @@
             </dependency>
             <dependency>
                 <groupId>com.support</groupId>
+                <artifactId>ratis-proto</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.ratis</groupId>
+                <artifactId>ratis-client</artifactId>
+                <version>${project.ratis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.support</groupId>
+                <artifactId>ratis-client</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.support</groupId>
                 <artifactId>counter</artifactId>
                 <version>${project.support.version}</version>
             </dependency>
@@ -75,6 +93,11 @@
                 <groupId>org.apache.ratis</groupId>
                 <artifactId>ratis-server</artifactId>
                 <version>${project.ratis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.ratis</groupId>
+                <artifactId>ratis-thirdparty-misc</artifactId>
+                <version>${project.ratis.thirdparty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ratis</groupId>

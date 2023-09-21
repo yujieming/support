@@ -1,0 +1,63 @@
+syntax = "proto3";
+option java_package = "com.support.meta.proto";
+option java_outer_classname = "MetaProtos";
+option java_generate_equals_and_hash = true;
+package com.support.meta.proto;
+
+// list
+// read
+// write
+// delete
+message MetaRequestProto{
+  oneof Request{
+    ListRequestProto list = 1;
+    ReadRequestProto read = 2;
+    WriteRequestProto write = 3;
+    DeleteRequestProto delete = 4;
+  }
+}
+
+message MetaReplyProto{
+  oneof Reply{
+    ReplyProto reply = 1;
+    ListReplyProto list = 2;
+    ReadReplyProto read = 3;
+  }
+}
+
+message ListRequestProto{
+  bytes prefix = 1;
+  //  uint64 size = 1;
+  //  uint64 offset = 2;
+}
+
+message ReadRequestProto{
+  bytes key = 1;
+}
+
+message WriteRequestProto{
+  repeated Meta meta = 1;
+}
+
+message DeleteRequestProto{
+  repeated bytes key = 1;
+}
+
+message Meta{
+  bytes key = 1;
+  bytes data = 2;
+}
+
+message ListReplyProto{
+  ReplyProto reply = 1;
+  repeated Meta metas = 2;
+}
+
+message ReadReplyProto{
+  ReplyProto reply = 1;
+  Meta meta = 2;
+}
+
+message ReplyProto{
+  bool success = 1;
+}

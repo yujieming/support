@@ -1,0 +1,26 @@
+syntax = "proto3";
+option java_package = "com.support.ratis.proto";
+option java_outer_classname = "CommandProtos";
+option java_generate_equals_and_hash = true;
+package com.support.ratis.proto;
+
+message CommandRequest{
+  oneof Request{
+    ReadOnlyRequest read = 1;
+    WriteRequest write = 2;
+  }
+}
+
+message ReadOnlyRequest{
+  bytes content = 1;
+}
+
+message WriteRequest{
+  bytes content = 1;
+}
+
+message Reply{
+  int32 code = 1;
+  string desc = 2;
+  bytes content = 3;
+}

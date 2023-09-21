@@ -1,9 +1,20 @@
 package com.support.meta.store;
 
+import org.rocksdb.RocksDBException;
+
 import java.util.Iterator;
 import java.util.Objects;
 
-public abstract class BaseStore<K, V> implements Store<K, V> {
+public abstract class BaseStore<K, V> extends BaseWatchSupport<K, V> implements Store<K, V> {
+
+
+    @Override
+    public boolean exist(K key) {
+        valid(key);
+        return doExist(key);
+    }
+
+    protected abstract boolean doExist(K key);
 
     @Override
     public void put(K key, V value) {
@@ -31,25 +42,17 @@ public abstract class BaseStore<K, V> implements Store<K, V> {
     protected abstract void doDelete(K key);
 
     @Override
-    public Iterator<Bucket<K,V>> scan(K keyPrefix) {
+    public Iterator<Bucket<K, V>> scan(K keyPrefix) {
         valid(keyPrefix);
         return doScan(keyPrefix);
     }
 
-    protected abstract Iterator<Bucket<K,V>> doScan(K keyPrefix);
+    protected abstract Iterator<Bucket<K, V>> doScan(K keyPrefix);
 
-    @Override
-    public void watch(K key, Object handler) {
-        valid(key);
-        doWatch(key, handler);
-    }
-
-    protected abstract void doWatch(K key, Object handler);
 
     protected void valid(Object value) {
         if (Objects.isNull(value))
             throw new RuntimeException("value is null");
     }
-
 
 }

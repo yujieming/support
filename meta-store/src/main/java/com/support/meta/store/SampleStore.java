@@ -1,6 +1,7 @@
 package com.support.meta.store;
 
 import org.apache.ratis.thirdparty.com.google.common.collect.Lists;
+import org.apache.ratis.thirdparty.io.grpc.internal.JsonUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,8 +12,18 @@ public class SampleStore<V> extends BaseStore<String, V> {
     private Map<String, V> store = new ConcurrentHashMap<>(256);
 
     @Override
+    protected boolean doExist(String key) {
+        return store.containsKey(key);
+    }
+
+    @Override
     protected void doPut(String key, V value) {
+        OperateType type = OperateType.UPDATE;
+        if (!exist(key)) {
+            type = OperateType.CREATE;
+        }
         this.store.put(key, value);
+        this.trigger(type, key, value);
     }
 
     @Override
@@ -22,17 +33,13 @@ public class SampleStore<V> extends BaseStore<String, V> {
 
     @Override
     protected void doDelete(String key) {
-        this.store.remove(key);
+        V remove = this.store.remove(key);
+        this.trigger(OperateType.DELETE, key, remove);
     }
 
     @Override
     protected Iterator<Bucket<String, V>> doScan(String keyPrefix) {
         return new Itr(keyPrefix, Collections.unmodifiableList(Lists.newArrayList(store.keySet())));
-    }
-
-    @Override
-    protected void doWatch(String key, Object handler) {
-        throw new RuntimeException("not support");
     }
 
     private class Itr implements Iterator<Bucket<String, V>> {

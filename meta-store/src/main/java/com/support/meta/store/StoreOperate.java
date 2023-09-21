@@ -16,4 +16,13 @@ public class StoreOperate<K, V> {
     public Bucket<K, V> getBucket() {
         return bucket;
     }
+
+
+    @Override
+    public String toString() {
+        return "StoreOperate{" +
+                "operateType=" + operateType +
+                ", bucket=" + bucket +
+                '}';
+    }
 }

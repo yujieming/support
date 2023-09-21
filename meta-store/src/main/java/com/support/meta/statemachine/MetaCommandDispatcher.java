@@ -25,7 +25,7 @@ public abstract class MetaCommandDispatcher implements Dispatcher<MetaRequestPro
                 ListReplyProto.Builder listBuilder = ListReplyProto.newBuilder().
                         setReply(ReplyProto.newBuilder().setSuccess(true));
                 scan.forEachRemaining(bucket -> {
-//                    listBuilder.addMetas(Meta.newBuilder().setKey(bucket.getKey()).setData(bucket.getValue()).build());
+                    listBuilder.addMetas(Meta.newBuilder().setKey(bucket.getKey()).setData(bucket.getValue()).build());
                 });
                 return CompletableFuture.completedFuture(MetaReplyProto.newBuilder().setList(listBuilder).build());
             case READ:

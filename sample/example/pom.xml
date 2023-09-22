@@ -35,6 +35,10 @@
             <groupId>com.support</groupId>
             <artifactId>ratis-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.support</groupId>
+            <artifactId>meta-store</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

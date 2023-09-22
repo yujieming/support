@@ -1,9 +1,8 @@
 
-package com.support.meta.run;
+package com.support.example.metastore;
 
 
 import com.support.meta.proto.MetaProtos.*;
-import com.support.ratis.client.RatisClient;
 import com.support.ratis.client.RatisCoverClient;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.RaftProperties;
@@ -22,8 +21,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.support.meta.run.Constants.PEERS;
-import static com.support.meta.run.Constants.RAFT_GROUP_META;
+import static com.support.example.metastore.Constants.PEERS;
+import static com.support.example.metastore.Constants.RAFT_GROUP_META;
 
 /**
  * Counter client application, this application sends specific number of

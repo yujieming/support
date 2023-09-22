@@ -1,4 +1,4 @@
-package com.support.meta.run;
+package com.support.example.metastore;
 
 import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;

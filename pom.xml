@@ -79,6 +79,11 @@
             </dependency>
             <dependency>
                 <groupId>com.support</groupId>
+                <artifactId>meta-store</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.support</groupId>
                 <artifactId>counter</artifactId>
                 <version>${project.support.version}</version>
             </dependency>

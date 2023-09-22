@@ -26,10 +26,6 @@
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.support</groupId>
-            <artifactId>ratis-client</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

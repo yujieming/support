@@ -1,4 +1,4 @@
-package com.support.meta.run;
+package com.support.example.metastore;
 
 import com.support.meta.store.rocksdb.RocksConfigKeys;
 import com.support.ratis.BaseServer;

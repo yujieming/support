@@ -1,6 +1,6 @@
 package com.support.example.counterV2;
 
-import com.support.example.counter.Constants;
+import com.support.example.Constants;
 import com.support.ratis.BaseServer;
 import com.support.ratis.conf.RaftConfigKeys;
 import org.apache.ratis.conf.RaftProperties;

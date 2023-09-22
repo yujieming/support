@@ -1,7 +1,6 @@
 package com.support.ratis.statemachine;
 
 import com.support.ratis.proto.CommandProtos.*;
-import org.apache.ratis.proto.ExamplesProtos;
 import org.apache.ratis.proto.RaftProtos;
 import org.apache.ratis.protocol.Message;
 import org.apache.ratis.protocol.RaftClientRequest;
@@ -47,7 +46,9 @@ public class DispatchStateMachine extends BaseStateMachine {
             return JavaUtils.completeExceptionally(
                     new IllegalArgumentException("Invalid RequestCase: " + proto.getRequestCase()));
         }
-        CompletableFuture<Reply> dispatch = dispatch(proto);
+        DispatchContext dispatchContext = new DispatchContext();
+        dispatchContext.setRequest(proto);
+        CompletableFuture<Reply> dispatch = dispatch(dispatchContext);
         return dispatch
                 .thenApply(reply -> Message.valueOf(reply.toByteString()));
     }
@@ -61,15 +62,18 @@ public class DispatchStateMachine extends BaseStateMachine {
                 .setClientRequest(request);
 
         if (proto.getRequestCase() != CommandRequest.RequestCase.WRITE) {
-            TransactionContext context = b.build();
-            context.setException(new IllegalArgumentException("Invalid RequestCase: " + proto.getRequestCase()));
-            return context;
+            return b.build().setException(new IllegalArgumentException("Invalid RequestCase: " + proto.getRequestCase()));
         } else {
             WriteRequest write = proto.getWrite();
-            b.setLogData(write.toByteString());
+            b.setLogData(write.getContent());
         }
+        doStartTransaction(b, proto.getWrite().getContent());
         return b.build();
     }
+
+    protected void doStartTransaction(TransactionContext.Builder builder, ByteString content) throws IOException {
+    }
+
 
     @Override
     public CompletableFuture<Message> applyTransaction(TransactionContext trx) {
@@ -79,21 +83,47 @@ public class DispatchStateMachine extends BaseStateMachine {
         updateLastAppliedTermIndex(entry.getTerm(), index);
 
         final RaftProtos.StateMachineLogEntryProto smLog = entry.getStateMachineLogEntry();
-        final WriteRequest writeRequest;
-        try {
-            writeRequest = WriteRequest.parseFrom(smLog.getLogData());
-        } catch (InvalidProtocolBufferException e) {
-            return JavaUtils.completeExceptionally(
-                    new IOException("Failed to parse logData in" + smLog + ", index=" + index).initCause(e));
-        }
-
-        CompletableFuture<Reply> dispatch = dispatch(CommandRequest.newBuilder()
-                .setWrite(writeRequest).build());
+        DispatchContext dispatchContext = new DispatchContext();
+        dispatchContext.setTrx(trx);
+        dispatchContext.setRequest(CommandRequest.newBuilder()
+                .setWrite(WriteRequest.newBuilder().setContent(smLog.getLogData())).build());
+        CompletableFuture<Reply> dispatch = dispatch(dispatchContext);
         return dispatch
                 .thenApply(reply -> Message.valueOf(reply.toByteString()));
     }
 
-    public CompletableFuture<Reply> dispatch(CommandRequest commandRequest) {
-        return getDispatcher().dispatch(commandRequest);
+    public CompletableFuture<Reply> dispatch(DispatchContext context) {
+        return getDispatcher().dispatch(context);
+    }
+
+    public static class DispatchContext {
+        private CommandRequest request;
+        private ByteString content;
+        private TransactionContext trx;
+
+        public CommandRequest getRequest() {
+            return request;
+        }
+
+        public void setRequest(CommandRequest request) {
+            this.request = request;
+        }
+
+        public ByteString getContent() {
+            return content;
+        }
+
+        public void setContent(ByteString content) {
+            this.content = content;
+        }
+
+        public TransactionContext getTrx() {
+            return trx;
+        }
+
+        public void setTrx(TransactionContext trx) {
+            this.trx = trx;
+        }
+
     }
 }

@@ -1,7 +1,8 @@
 
-package com.support.example.filestore;
+package com.support.example.filestoreV2;
 
 
+import com.support.ratis.client.RatisClient;
 import org.apache.ratis.RaftConfigKeys;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.client.RaftClientConfigKeys;
@@ -9,23 +10,28 @@ import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.datastream.SupportedDataStreamType;
 import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.grpc.GrpcFactory;
+import org.apache.ratis.proto.ExamplesProtos.*;
 import org.apache.ratis.protocol.ClientId;
 import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.rpc.SupportedRpcType;
 import org.apache.ratis.server.RaftServerConfigKeys;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
+import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.ratis.thirdparty.io.netty.buffer.ByteBuf;
 import org.apache.ratis.thirdparty.io.netty.buffer.PooledByteBufAllocator;
+import org.apache.ratis.util.FileUtils;
+import org.apache.ratis.util.ProtoUtils;
 import org.apache.ratis.util.SizeInBytes;
 import org.apache.ratis.util.TimeDuration;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.support.example.Constants.RAFT_GROUP_STORE;
+import static com.support.example.Constants.RAFT_GROUP_STORE_DISPATCH;
 
 /**
  * Counter client application, this application sends specific number of
@@ -35,7 +41,7 @@ import static com.support.example.Constants.RAFT_GROUP_STORE;
  * Parameter to this application indicate the number of INCREMENT command, if no
  * parameter found, application use default value which is 10
  */
-public final class ReadClient implements Closeable {
+public final class WriterClient implements Closeable {
 
     private int sync = 0;
 
@@ -48,7 +54,7 @@ public final class ReadClient implements Closeable {
     private int numClients = 1;
 
 
-    private List<File> storageDir = new ArrayList<File>(){{
+    private List<File> storageDir = new ArrayList<File>() {{
         add(new File("/tmp/gen/"));
     }};
 
@@ -92,42 +98,40 @@ public final class ReadClient implements Closeable {
                 TimeDuration.valueOf(50000, TimeUnit.MILLISECONDS));
         RaftClientConfigKeys.Async.setOutstandingRequestsMax(raftProperties, 1000);
 
-//        for (File dir : storageDir) {
-//            FileUtils.createDirectories(dir);
-//        }
+        for (File dir : storageDir) {
+            FileUtils.createDirectories(dir);
+        }
 
         operation(getClients(raftProperties));
     }
 
-    protected void operation(List<FileStoreClient> clients) throws IOException, ExecutionException, InterruptedException {
-//        final ExecutorService executor = Executors.newFixedThreadPool(getNumThread());
-//        List<String> paths = generateFiles(executor);
+    protected void operation(List<RatisClient> clients) throws IOException, ExecutionException, InterruptedException {
+        final ExecutorService executor = Executors.newFixedThreadPool(getNumThread());
+        List<String> paths = generateFiles(executor);
 //        dropCache();
         System.out.println("Starting Async write now ");
 
         long startTime = System.currentTimeMillis();
 
-        FileStoreClient fileStoreClient = clients.get(0);
-        ByteString read = fileStoreClient.read("file-591d15ae-ac83-4388-a29b-a991486bc9b6-2", 0, 1024);
-//        long totalWrittenBytes = waitWriteFinish(writeByHeapByteBuffer(paths, clients, executor));
+        long totalWrittenBytes = waitWriteFinish(writeByHeapByteBuffer(paths, clients, executor));
 
         long endTime = System.currentTimeMillis();
 
         System.out.println("Total files written: " + getNumFiles());
         System.out.println("Each files size: " + getFileSizeInBytes());
-//        System.out.println("Total data written: " + totalWrittenBytes + " bytes");
-//        System.out.println("Total time taken: " + (endTime - startTime) + " millis");
+        System.out.println("Total data written: " + totalWrittenBytes + " bytes");
+        System.out.println("Total time taken: " + (endTime - startTime) + " millis");
 
         stop(clients);
     }
 
-    private long waitWriteFinish(Map<String, CompletableFuture<List<CompletableFuture<Long>>>> fileMap)
-            throws ExecutionException, InterruptedException {
+    private long waitWriteFinish(Map<String, CompletableFuture<List<CompletableFuture<ByteString>>>> fileMap)
+            throws ExecutionException, InterruptedException, InvalidProtocolBufferException {
         long totalBytes = 0;
-        for (CompletableFuture<List<CompletableFuture<Long>>> futures : fileMap.values()) {
+        for (CompletableFuture<List<CompletableFuture<ByteString>>> futures : fileMap.values()) {
             long writtenLen = 0;
-            for (CompletableFuture<Long> future : futures.get()) {
-                writtenLen += future.join();
+            for (CompletableFuture<ByteString> future : futures.get()) {
+                writtenLen += WriteReplyProto.parseFrom(future.join()).getLength();
             }
 
             if (writtenLen != getFileSizeInBytes()) {
@@ -139,17 +143,17 @@ public final class ReadClient implements Closeable {
         return totalBytes;
     }
 
-    private Map<String, CompletableFuture<List<CompletableFuture<Long>>>> writeByHeapByteBuffer(
-            List<String> paths, List<FileStoreClient> clients, ExecutorService executor) {
-        Map<String, CompletableFuture<List<CompletableFuture<Long>>>> fileMap = new HashMap<>();
+    private Map<String, CompletableFuture<List<CompletableFuture<ByteString>>>> writeByHeapByteBuffer(
+            List<String> paths, List<RatisClient> clients, ExecutorService executor) {
+        Map<String, CompletableFuture<List<CompletableFuture<ByteString>>>> fileMap = new HashMap<>();
 
         int clientIndex = 0;
-        for(String path : paths) {
-            final CompletableFuture<List<CompletableFuture<Long>>> future = new CompletableFuture<>();
-            final FileStoreClient client = clients.get(clientIndex % clients.size());
-            clientIndex ++;
+        for (String path : paths) {
+            final CompletableFuture<List<CompletableFuture<ByteString>>> future = new CompletableFuture<>();
+            final RatisClient client = clients.get(clientIndex % clients.size());
+            clientIndex++;
             CompletableFuture.supplyAsync(() -> {
-                List<CompletableFuture<Long>> futures = new ArrayList<>();
+                List<CompletableFuture<ByteString>> futures = new ArrayList<>();
                 File file = new File(path);
                 try (FileInputStream fis = new FileInputStream(file)) {
                     final FileChannel in = fis.getChannel();
@@ -175,13 +179,13 @@ public final class ReadClient implements Closeable {
         UUID uuid = UUID.randomUUID();
         List<String> paths = new ArrayList<>();
         List<CompletableFuture<Long>> futures = new ArrayList<>();
-        for (int i = 0; i < numFiles; i ++) {
+        for (int i = 0; i < numFiles; i++) {
             String path = getPath("file-" + uuid + "-" + i);
             paths.add(path);
             futures.add(writeFileAsync(path, executor));
         }
 
-        for (int i = 0; i < futures.size(); i ++) {
+        for (int i = 0; i < futures.size(); i++) {
             long size = futures.get(i).join();
             if (size != fileSizeInBytes) {
                 System.err.println("Error: path:" + paths.get(i) + " write:" + size +
@@ -208,7 +212,7 @@ public final class ReadClient implements Closeable {
     protected long writeFile(String path, long fileSize, long bufferSize) throws IOException {
         final byte[] buffer = new byte[Math.toIntExact(bufferSize)];
         long offset = 0;
-        try(RandomAccessFile raf = new RandomAccessFile(path, "rw")) {
+        try (RandomAccessFile raf = new RandomAccessFile(path, "rw")) {
             while (offset < fileSize) {
                 final long remaining = fileSize - offset;
                 final long chunkSize = Math.min(remaining, bufferSize);
@@ -220,8 +224,8 @@ public final class ReadClient implements Closeable {
         return offset;
     }
 
-    long write(FileChannel in, long offset, FileStoreClient fileStoreClient, String path,
-               List<CompletableFuture<Long>> futures) throws IOException {
+    long write(FileChannel in, long offset, RatisClient ratisClient, String path,
+               List<CompletableFuture<ByteString>> futures) throws IOException {
         final int bufferSize = getBufferSizeInBytes();
         final ByteBuf buf = PooledByteBufAllocator.DEFAULT.heapBuffer(bufferSize);
         final int bytesRead = buf.writeBytes(in, bufferSize);
@@ -230,17 +234,33 @@ public final class ReadClient implements Closeable {
             throw new IllegalStateException("Failed to read " + bufferSize + " byte(s) from " + this
                     + ". The channel has reached end-of-stream at " + offset);
         } else if (bytesRead > 0) {
-            final CompletableFuture<Long> f = fileStoreClient.writeAsync(
+            final CompletableFuture<ByteString> f = ratisClient.writeAsync(writeRequest(
                     path, offset, offset + bytesRead == getFileSizeInBytes(), buf.nioBuffer(),
-                    sync == 1);
+                    sync == 1));
             f.thenRun(buf::release);
             futures.add(f);
         }
         return bytesRead;
     }
 
-    protected void stop(List<FileStoreClient> clients) throws IOException {
-        for (FileStoreClient client : clients) {
+    private ByteString writeRequest(String path, long offset, boolean close, ByteBuffer data, boolean sync) {
+        final WriteRequestHeaderProto.Builder header = WriteRequestHeaderProto.newBuilder()
+                .setPath(ProtoUtils.toByteString(path))
+                .setOffset(offset)
+                .setLength(data.remaining())
+                .setClose(close)
+                .setSync(sync);
+
+        final WriteRequestProto.Builder write = WriteRequestProto.newBuilder()
+                .setHeader(header)
+                .setData(ByteString.copyFrom(data));
+
+        final FileStoreRequestProto request = FileStoreRequestProto.newBuilder().setWrite(write).build();
+        return request.toByteString();
+    }
+
+    protected void stop(List<RatisClient> clients) throws IOException {
+        for (RatisClient client : clients) {
             client.close();
         }
         System.exit(0);
@@ -251,10 +271,10 @@ public final class ReadClient implements Closeable {
         return new File(storageDir.get(Math.abs(hash)), fileName).getAbsolutePath();
     }
 
-    public List<FileStoreClient> getClients(RaftProperties raftProperties) {
-        List<FileStoreClient> fileStoreClients = new ArrayList<>();
-        for (int i = 0; i < numClients; i ++) {
-            final RaftGroup raftGroup = RAFT_GROUP_STORE;
+    public List<RatisClient> getClients(RaftProperties raftProperties) {
+        List<RatisClient> fileStoreClients = new ArrayList<>();
+        for (int i = 0; i < numClients; i++) {
+            final RaftGroup raftGroup = RAFT_GROUP_STORE_DISPATCH;
 
             RaftClient.Builder builder =
                     RaftClient.newBuilder().setProperties(raftProperties);
@@ -262,10 +282,10 @@ public final class ReadClient implements Closeable {
             builder.setClientRpc(
                     new GrpcFactory(new org.apache.ratis.conf.Parameters())
                             .newRaftClientRpc(ClientId.randomId(), raftProperties));
-            RaftPeer[] peers = RAFT_GROUP_STORE.getPeers().toArray(new RaftPeer[0]);
+            RaftPeer[] peers = RAFT_GROUP_STORE_DISPATCH.getPeers().toArray(new RaftPeer[0]);
             builder.setPrimaryDataStreamServer(peers[0]);
             RaftClient client = builder.build();
-            fileStoreClients.add(new FileStoreClient(client));
+            fileStoreClients.add(new RatisClient(client));
         }
         return fileStoreClients;
     }
@@ -276,7 +296,7 @@ public final class ReadClient implements Closeable {
     }
 
     public static void main(String[] args) throws Exception {
-        ReadClient client = new ReadClient();
+        WriterClient client = new WriterClient();
         client.run();
     }
 }

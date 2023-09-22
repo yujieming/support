@@ -189,8 +189,8 @@ public class CounterDispatchStateMachine extends DispatchStateMachine {
 
     private class Dispatcher implements CommendDispatcher {
         @Override
-        public CompletableFuture<ByteString> readOnly(ByteString content) {
-            final String command = content.toStringUtf8();
+        public CompletableFuture<ByteString> readOnly(DispatchStateMachine.DispatchContext context) {
+            final String command = context.getContent().toStringUtf8();
             if (!CounterCommand.GET.matches(command)) {
                 return JavaUtils.completeExceptionally(new IllegalArgumentException("Invalid Command: " + command));
             }
@@ -198,8 +198,8 @@ public class CounterDispatchStateMachine extends DispatchStateMachine {
         }
 
         @Override
-        public CompletableFuture<ByteString> write(ByteString content) {
-            final String command = content.toStringUtf8();
+        public CompletableFuture<ByteString> write(DispatchStateMachine.DispatchContext context) {
+            final String command = context.getContent().toStringUtf8();
             if (!CounterCommand.INCREMENT.matches(command)) {
                 return JavaUtils.completeExceptionally(new IllegalArgumentException("Invalid Command: " + command));
             }

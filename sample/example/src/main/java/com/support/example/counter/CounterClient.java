@@ -6,11 +6,9 @@ import com.support.counter.CounterCommand;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.protocol.GroupInfoReply;
-import org.apache.ratis.protocol.GroupListReply;
 import org.apache.ratis.protocol.RaftClientReply;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.thirdparty.io.grpc.Status;
-import org.apache.ratis.thirdparty.io.grpc.StatusException;
 import org.apache.ratis.thirdparty.io.grpc.StatusRuntimeException;
 
 import java.io.Closeable;
@@ -23,8 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.support.example.counter.Constants.PEERS;
-import static com.support.example.counter.Constants.RAFT_GROUP;
+import static com.support.example.Constants.*;
 
 /**
  * Counter client application, this application sends specific number of
@@ -38,7 +35,7 @@ public final class CounterClient implements Closeable {
     //build the client
     private final RaftClient client = RaftClient.newBuilder()
             .setProperties(new RaftProperties())
-            .setRaftGroup(RAFT_GROUP)
+            .setRaftGroup(RAFT_GROUP_COUNTER)
             .build();
 
 
@@ -125,14 +122,14 @@ public final class CounterClient implements Closeable {
                 do {
                     try{
                         GroupInfoReply info = client.client.getGroupManagementApi(peer.getId())
-                                .info(RAFT_GROUP.getGroupId());
+                                .info(RAFT_GROUP_COUNTER.getGroupId());
                         System.out.println(info);
                         break;
                     }catch (StatusRuntimeException e){
                         Status status = e.getStatus();
                         if(status.getDescription().contains("not found")){
                             client.client.getGroupManagementApi(peer.getId())
-                                    .add(RAFT_GROUP);
+                                    .add(RAFT_GROUP_COUNTER);
                             break;
                         }
                     }

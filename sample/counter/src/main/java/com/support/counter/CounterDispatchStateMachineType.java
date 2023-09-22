@@ -1,13 +1,13 @@
-package com.support.filestore.statemachine;
+package com.support.counter;
 
 import com.support.ratis.statemachine.StateMachineType;
 
 import java.util.UUID;
 
-public class FileStoreStateMachineType implements StateMachineType {
+public class CounterDispatchStateMachineType implements StateMachineType {
 
-    public static final String TYPE = "fileStore";
-    public static final String MATCH = "00002";
+    public static final String TYPE = "counterDispatch";
+    public static final String MATCH = "00001";
 
     @Override
     public boolean match(UUID uuid) {
@@ -31,6 +31,6 @@ public class FileStoreStateMachineType implements StateMachineType {
 
     @Override
     public Integer order() {
-        return 1;
+        return 0;
     }
 }

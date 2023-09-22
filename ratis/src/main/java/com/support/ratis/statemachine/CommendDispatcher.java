@@ -9,15 +9,17 @@ import java.util.concurrent.CompletableFuture;
 
 public interface CommendDispatcher {
 
-    default CompletableFuture<Reply> dispatch(CommandRequest request) {
+    default CompletableFuture<Reply> dispatch(DispatchStateMachine.DispatchContext context) {
         CompletableFuture<ByteString> result = null;
         try {
-            switch (request.getRequestCase()) {
+            switch (context.getRequest().getRequestCase()) {
                 case READ:
-                    result = readOnly(request.getRead().getContent());
+                    context.setContent(context.getRequest().getRead().getContent());
+                    result = readOnly(context);
                     break;
                 case WRITE:
-                    result = write(request.getWrite().getContent());
+                    context.setContent(context.getRequest().getWrite().getContent());
+                    result = write(context);
                     break;
             }
         } catch (Exception e) {
@@ -25,14 +27,14 @@ public interface CommendDispatcher {
         }
 
         if (Objects.isNull(result)) {
-            return JavaUtils.completeExceptionally(new IllegalArgumentException("Invalid Command: " + request.getRequestCase()));
+            return JavaUtils.completeExceptionally(new IllegalArgumentException("Invalid Command: " + context.getRequest().getRequestCase()));
         }
         return result.thenApply(content ->
                 Reply.newBuilder()
                         .setContent(content).build());
     }
 
-    CompletableFuture<ByteString> readOnly(ByteString content);
+    CompletableFuture<ByteString> readOnly(DispatchStateMachine.DispatchContext context);
 
-    CompletableFuture<ByteString> write(ByteString content);
+    CompletableFuture<ByteString> write(DispatchStateMachine.DispatchContext context);
 }

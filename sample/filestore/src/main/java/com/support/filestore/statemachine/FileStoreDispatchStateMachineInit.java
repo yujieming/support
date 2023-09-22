@@ -1,13 +1,13 @@
 package com.support.filestore.statemachine;
 
-import com.support.filestore.FileStoreStateMachine;
+import com.support.filestore.FileStoreDispatchStateMachine;
 import com.support.ratis.conf.StateMachineConfigKeys;
 import com.support.ratis.conf.StateMachineProperties;
 import com.support.ratis.statemachine.StateMachineInit;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.statemachine.StateMachine;
 
-public class FileStoreStateMachineInit implements StateMachineInit {
+public class FileStoreDispatchStateMachineInit implements StateMachineInit {
 
     private RaftProperties properties;
 
@@ -19,6 +19,6 @@ public class FileStoreStateMachineInit implements StateMachineInit {
 
     @Override
     public StateMachine init() {
-        return new FileStoreStateMachine(properties);
+        return new FileStoreDispatchStateMachine(properties);
     }
 }

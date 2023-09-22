@@ -23,7 +23,7 @@ import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.support.example.counter.Constants.*;
+import static com.support.example.Constants.*;
 
 /**
  * Counter client application, this application sends specific number of

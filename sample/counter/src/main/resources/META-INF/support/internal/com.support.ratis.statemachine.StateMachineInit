@@ -1,1 +1,2 @@
 counter=com.support.counter.CounterStateMachineInit
+counterDispatch=com.support.counter.CounterDispatchStateMachineInit

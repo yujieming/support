@@ -1,4 +1,4 @@
-package com.support.example.counter;
+package com.support.example;
 
 import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;
@@ -45,15 +45,19 @@ public final class Constants {
         }});
     }
 
-    public static final UUID GROUP_ID = UUID.fromString("00000d47-d67c-49a3-9011-abb3109a44c1");
+    public static final UUID GROUP_ID_COUNT = UUID.fromString("00000d47-d67c-49a3-9011-abb3109a44c1");
+    public static final UUID GROUP_ID_COUNT_DISPATCH = UUID.fromString("00001d47-d67c-49a3-9011-abb3109a44c1");
+    public static final UUID GROUP_ID_STORE = UUID.fromString("00002d47-d67c-49a3-9011-abb3109a44c1");
+    public static final UUID GROUP_ID_STORE_DISPATCH = UUID.fromString("00003d47-d67c-49a3-9011-abb3109a44c1");
 
-    public static final UUID GROUP_ID_STORE = UUID.fromString("11111d47-d67c-49a3-9011-abb3109a44c1");
-
-    public static final RaftGroup RAFT_GROUP = RaftGroup.valueOf(RaftGroupId.valueOf(Constants.GROUP_ID), PEERS);
-
-    public static final RaftGroup RAFT_GROUP_COUNTER = RaftGroup.valueOf(RaftGroupId.valueOf(Constants.GROUP_ID), PEERS);
+    public static final RaftGroup RAFT_GROUP_COUNTER = RaftGroup.valueOf(RaftGroupId.valueOf(Constants.GROUP_ID_COUNT), PEERS);
 
     public static final RaftGroup RAFT_GROUP_STORE = RaftGroup.valueOf(RaftGroupId.valueOf(Constants.GROUP_ID_STORE), PEERS);
+
+
+    public static final RaftGroup RAFT_GROUP_COUNTER_DISPATCH = RaftGroup.valueOf(RaftGroupId.valueOf(Constants.GROUP_ID_COUNT_DISPATCH), PEERS);
+
+    public static final RaftGroup RAFT_GROUP_STORE_DISPATCH = RaftGroup.valueOf(RaftGroupId.valueOf(Constants.GROUP_ID_STORE_DISPATCH), PEERS);
 
     private Constants() {
     }

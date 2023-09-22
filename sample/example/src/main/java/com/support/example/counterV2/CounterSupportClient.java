@@ -22,8 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.support.example.counter.Constants.PEERS;
-import static com.support.example.counter.Constants.RAFT_GROUP;
+import static com.support.example.Constants.*;
 
 /**
  * Counter client application, this application sends specific number of
@@ -37,7 +36,7 @@ public final class CounterSupportClient implements Closeable {
     //build the client
     private final RaftClient client = RaftClient.newBuilder()
             .setProperties(new RaftProperties())
-            .setRaftGroup(RAFT_GROUP)
+            .setRaftGroup(RAFT_GROUP_COUNTER_DISPATCH)
             .build();
 
     private final RatisClient ratisClient = new RatisClient(client);
@@ -126,14 +125,14 @@ public final class CounterSupportClient implements Closeable {
                 do {
                     try {
                         GroupInfoReply info = client.client.getGroupManagementApi(peer.getId())
-                                .info(RAFT_GROUP.getGroupId());
+                                .info(RAFT_GROUP_COUNTER_DISPATCH.getGroupId());
                         System.out.println(info);
                         break;
                     } catch (StatusRuntimeException e) {
                         Status status = e.getStatus();
                         if (status.getDescription().contains("not found")) {
                             client.client.getGroupManagementApi(peer.getId())
-                                    .add(RAFT_GROUP);
+                                    .add(RAFT_GROUP_COUNTER_DISPATCH);
                             break;
                         }
                     }

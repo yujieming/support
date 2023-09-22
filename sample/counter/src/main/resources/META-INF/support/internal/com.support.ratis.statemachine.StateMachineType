@@ -1,1 +1,2 @@
 counter=com.support.counter.CounterStateMachineType
+counterDispatch=com.support.counter.CounterDispatchStateMachineType

@@ -49,10 +49,10 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
 
     private class Dispatcher implements CommendDispatcher {
         @Override
-        public CompletableFuture<ByteString> readOnly(ByteString content) {
+        public CompletableFuture<ByteString> readOnly(DispatchStateMachine.DispatchContext context) {
             MetaRequestProto requestProto;
             try {
-                requestProto = MetaRequestProto.parseFrom(content);
+                requestProto = MetaRequestProto.parseFrom(context.getContent());
             } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e.getMessage());
             }
@@ -83,10 +83,10 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
         }
 
         @Override
-        public CompletableFuture<ByteString> write(ByteString content) {
+        public CompletableFuture<ByteString> write(DispatchStateMachine.DispatchContext context) {
             MetaRequestProto requestProto;
             try {
-                requestProto = MetaRequestProto.parseFrom(content);
+                requestProto = MetaRequestProto.parseFrom(context.getContent());
             } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e.getMessage());
             }

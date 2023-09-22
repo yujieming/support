@@ -4,15 +4,15 @@ import com.support.ratis.statemachine.StateMachineType;
 
 import java.util.UUID;
 
-public class FileStoreStateMachineType implements StateMachineType {
+public class FileStoreDispatchStateMachineType implements StateMachineType {
 
-    public static final String TYPE = "fileStore";
-    public static final String MATCH = "00002";
+    public static final String TYPE = "fileStoreDispatch";
+    public static final String MATCH = "00003";
 
     @Override
     public boolean match(UUID uuid) {
         String prefix = uuid.toString().split("-")[0];
-        if(prefix.startsWith(MATCH)){
+        if (prefix.startsWith(MATCH)) {
             return true;
         }
         return false;

@@ -5,13 +5,13 @@ import java.util.Iterator;
 
 public interface Store<K, V> extends Closeable {
 
-    boolean exist(K key);
+    boolean exist(String storeId, K key);
 
-    void put(K key, V value);
+    void put(String storeId, K key, V value);
 
-    V get(K key);
+    V get(String storeId, K key);
 
-    void delete(K key);
+    void delete(String storeId, K key);
 
-    Iterator<Bucket<K, V>> scan(K keyPrefix);
+    Iterator<Bucket<K, V>> scan(String storeId, K keyPrefix);
 }

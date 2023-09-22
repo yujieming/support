@@ -6,10 +6,7 @@ import com.support.meta.store.OperateType;
 import com.support.ratis.conf.StateMachineProperties;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.util.FileUtils;
-import org.rocksdb.Options;
-import org.rocksdb.RocksDB;
-import org.rocksdb.RocksDBException;
-import org.rocksdb.RocksIterator;
+import org.rocksdb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +14,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RocksStore extends BaseStore<ByteString, ByteString> {
 
     Logger LOG = LoggerFactory.getLogger(RocksStore.class);
+
+    private ConcurrentHashMap<String, ColumnFamilyHandle> columnFamilies = new ConcurrentHashMap<>();
 
     static {
         RocksDB.loadLibrary();
@@ -54,18 +54,18 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     }
 
     @Override
-    protected boolean doExist(ByteString key) {
-        return rocksDB.keyMayExist(key.toByteArray(), new StringBuilder());
+    protected boolean doExist(String storeId, ByteString key) {
+        return rocksDB.keyMayExist(getOrCreateColumnFamily(storeId), key.toByteArray(), new StringBuilder());
     }
 
     @Override
-    protected void doPut(ByteString key, ByteString value) {
+    protected void doPut(String storeId, ByteString key, ByteString value) {
         OperateType type = OperateType.UPDATE;
-        if (!exist(key)) {
+        if (!exist(storeId, key)) {
             type = OperateType.CREATE;
         }
         try {
-            rocksDB.put(key.toByteArray(), value.toByteArray());
+            rocksDB.put(getOrCreateColumnFamily(storeId), key.toByteArray(), value.toByteArray());
         } catch (RocksDBException e) {
             LOG.error("put value error", e);
             throw new RuntimeException(e.getCause());
@@ -74,9 +74,9 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     }
 
     @Override
-    protected ByteString doGet(ByteString key) {
+    protected ByteString doGet(String storeId, ByteString key) {
         try {
-            byte[] bytes = rocksDB.get(key.toByteArray());
+            byte[] bytes = rocksDB.get(getOrCreateColumnFamily(storeId), key.toByteArray());
             if (Objects.isNull(bytes)) {
                 return null;
             }
@@ -88,9 +88,9 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     }
 
     @Override
-    protected void doDelete(ByteString key) {
+    protected void doDelete(String storeId, ByteString key) {
         try {
-            rocksDB.delete(key.toByteArray());
+            rocksDB.delete(getOrCreateColumnFamily(storeId), key.toByteArray());
         } catch (RocksDBException e) {
             LOG.error("delete value error", e);
             throw new RuntimeException(e.getCause());
@@ -98,13 +98,39 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     }
 
     @Override
-    protected Iterator<Bucket<ByteString, ByteString>> doScan(ByteString keyPrefix) {
-        return new Itr(keyPrefix);
+    protected Iterator<Bucket<ByteString, ByteString>> doScan(String storeId, ByteString keyPrefix) {
+        return new Itr(storeId, keyPrefix);
     }
 
     @Override
     public void close() throws IOException {
         rocksDB.close();
+    }
+
+    private ColumnFamilyHandle getOrCreateColumnFamily(String kvStoreId) {
+        if (Objects.isNull(kvStoreId)) {
+            return rocksDB.getDefaultColumnFamily();
+        }
+        ColumnFamilyHandle columnFamily = columnFamilies.get(kvStoreId);
+        if (columnFamily == null) {
+            ColumnFamilyOptions columnOptions = getColumnFamilyOptions(kvStoreId);
+            ColumnFamilyDescriptor columnDescriptor =
+                    new ColumnFamilyDescriptor(kvStoreId.getBytes(), columnOptions);
+            try {
+                columnFamily = rocksDB.createColumnFamily(columnDescriptor);
+                columnFamilies.put(kvStoreId, columnFamily);
+            } catch (RocksDBException e) {
+                throw new RuntimeException("Error creating ColumnFamilyHandle.", e);
+            }
+        }
+        return columnFamily;
+    }
+
+    private ColumnFamilyOptions getColumnFamilyOptions(String kvStoreId) {
+//        byte[] bytes = rocksDB.get(kvStoreId.getBytes());
+//        Properties properties = new Properties();
+//        properties.
+        return new ColumnFamilyOptions();
     }
 
 
@@ -114,8 +140,8 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
 
         private ByteString keyPrefix;
 
-        public Itr(ByteString keyPrefix) {
-            rocksIterator = rocksDB.newIterator();
+        public Itr(String storeId, ByteString keyPrefix) {
+            rocksIterator = rocksDB.newIterator(getOrCreateColumnFamily(storeId));
             rocksIterator.seek(keyPrefix.toByteArray());
             this.keyPrefix = keyPrefix;
         }

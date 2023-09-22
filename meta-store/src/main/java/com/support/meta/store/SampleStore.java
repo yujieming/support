@@ -11,14 +11,14 @@ public class SampleStore<V> extends BaseStore<String, V> {
     private Map<String, V> store = new ConcurrentHashMap<>(256);
 
     @Override
-    protected boolean doExist(String key) {
+    protected boolean doExist(String storeId, String key) {
         return store.containsKey(key);
     }
 
     @Override
-    protected void doPut(String key, V value) {
+    protected void doPut(String storeId, String key, V value) {
         OperateType type = OperateType.UPDATE;
-        if (!exist(key)) {
+        if (!exist(storeId, key)) {
             type = OperateType.CREATE;
         }
         this.store.put(key, value);
@@ -26,18 +26,18 @@ public class SampleStore<V> extends BaseStore<String, V> {
     }
 
     @Override
-    protected V doGet(String key) {
+    protected V doGet(String storeId, String key) {
         return this.store.get(key);
     }
 
     @Override
-    protected void doDelete(String key) {
+    protected void doDelete(String storeId, String key) {
         V remove = this.store.remove(key);
         this.trigger(OperateType.DELETE, key, remove);
     }
 
     @Override
-    protected Iterator<Bucket<String, V>> doScan(String keyPrefix) {
+    protected Iterator<Bucket<String, V>> doScan(String storeId, String keyPrefix) {
         return new Itr(keyPrefix, Collections.unmodifiableList(Lists.newArrayList(store.keySet())));
     }
 

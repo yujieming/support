@@ -26,19 +26,23 @@ message MetaReplyProto{
 }
 
 message ListRequestProto{
-  bytes prefix = 1;
+  string store = 1;
+  bytes prefix = 2;
 }
 
 message ReadRequestProto{
-  bytes key = 1;
+  string store = 1;
+  bytes key = 2;
 }
 
 message WriteRequestProto{
-  repeated Meta meta = 1;
+  string store = 1;
+  repeated Meta meta = 2;
 }
 
 message DeleteRequestProto{
-  repeated bytes key = 1;
+  string store = 1;
+  repeated bytes key = 2;
 }
 
 message Meta{

@@ -68,7 +68,7 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
                 case LIST:
                     ListRequestProto list = requestProto.getList();
                     ByteString prefix = list.getPrefix();
-                    Iterator<Bucket<ByteString, ByteString>> scan = store.scan(prefix);
+                    Iterator<Bucket<ByteString, ByteString>> scan = store.scan(list.getStore(), prefix);
                     ListReplyProto.Builder listBuilder = ListReplyProto.newBuilder().
                             setReply(ReplyProto.newBuilder().setSuccess(true));
                     scan.forEachRemaining(bucket -> {
@@ -79,9 +79,9 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
                     Supplier<MetaReplyProto> supplier = () -> {
                         ReadRequestProto read = requestProto.getRead();
                         ByteString key = read.getKey();
-                        ByteString value = store.get(key);
+                        ByteString value = store.get(read.getStore(), key);
                         Meta.Builder meta = Meta.newBuilder().setKey(key);
-                        if(Objects.nonNull(value)){
+                        if (Objects.nonNull(value)) {
                             meta.setData(value);
                         }
                         ReadReplyProto.Builder builder = ReadReplyProto.newBuilder()
@@ -108,7 +108,7 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
                     WriteRequestProto write = requestProto.getWrite();
                     List<Meta> metaList = write.getMetaList();
                     metaList.forEach(meta -> {
-                        store.put(meta.getKey(), meta.getData());
+                        store.put(write.getStore(), meta.getKey(), meta.getData());
                     });
                     return CompletableFuture.completedFuture(MetaReplyProto.newBuilder()
                             .setBase(ReplyProto.newBuilder().setSuccess(true)).build().toByteString());
@@ -116,7 +116,7 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
                     DeleteRequestProto delete = requestProto.getDelete();
                     List<ByteString> keyList = delete.getKeyList();
                     keyList.forEach(key -> {
-                        store.delete(key);
+                        store.delete(delete.getStore(), key);
                     });
                     return CompletableFuture.completedFuture(MetaReplyProto.newBuilder()
                             .setBase(ReplyProto.newBuilder().setSuccess(true)).build().toByteString());

@@ -8,7 +8,7 @@ public class MetaStoreStateMachineType implements StateMachineType {
 
     public static final String TYPE = "meta";
 
-    public static final String MATCH = "00001";
+    public static final String MATCH = "10000";
 
     @Override
     public boolean match(UUID uuid) {

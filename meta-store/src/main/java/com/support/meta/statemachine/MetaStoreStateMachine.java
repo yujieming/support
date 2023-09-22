@@ -8,6 +8,7 @@ import com.support.ratis.statemachine.DispatchStateMachine;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.server.RaftServer;
 import org.apache.ratis.server.storage.RaftStorage;
+import org.apache.ratis.statemachine.StateMachineStorage;
 import org.apache.ratis.statemachine.impl.SimpleStateMachineStorage;
 import org.apache.ratis.thirdparty.com.google.protobuf.AbstractMessageLite;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
@@ -16,6 +17,7 @@ import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferExce
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -25,14 +27,16 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
 
     private final Store<ByteString, ByteString> store;
 
-
     public MetaStoreStateMachine(Store<ByteString, ByteString> store) {
+        super();
+        setDispatcher(new Dispatcher());
         this.store = store;
     }
 
     @Override
-    public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage storage) throws IOException {
-        super.initialize(raftServer, raftGroupId, storage);
+    public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage raftStorage) throws IOException {
+        super.initialize(raftServer, raftGroupId, raftStorage);
+        this.storage.init(raftStorage);
     }
 
     @Override
@@ -41,10 +45,14 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
     }
 
     @Override
+    public StateMachineStorage getStateMachineStorage() {
+        return storage;
+    }
+
+    @Override
     public void close() throws IOException {
         super.close();
         store.close();
-//        setLastAppliedTermIndex(null);
     }
 
     private class Dispatcher implements CommendDispatcher {
@@ -72,8 +80,13 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
                         ReadRequestProto read = requestProto.getRead();
                         ByteString key = read.getKey();
                         ByteString value = store.get(key);
-                        ReadReplyProto.Builder builder = ReadReplyProto.newBuilder().setReply(ReplyProto.newBuilder().setSuccess(true))
-                                .setMeta(Meta.newBuilder().setData(value).setKey(key));
+                        Meta.Builder meta = Meta.newBuilder().setKey(key);
+                        if(Objects.nonNull(value)){
+                            meta.setData(value);
+                        }
+                        ReadReplyProto.Builder builder = ReadReplyProto.newBuilder()
+                                .setReply(ReplyProto.newBuilder().setSuccess(true))
+                                .setMeta(meta);
                         return MetaReplyProto.newBuilder().setRead(builder).build();
                     };
                     return CompletableFuture.completedFuture(supplier.get())

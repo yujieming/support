@@ -11,6 +11,10 @@ public class WrapperStateMachineRegistry<T> extends BaseStateMachineRegistry {
         this.value = value;
     }
 
+    protected T getValue(){
+        return value;
+    }
+
     @Override
     protected void preConfig(StateMachineProperties stateMachineProperties) {
         StateMachineConfigKeys.setWrapper(stateMachineProperties, value);

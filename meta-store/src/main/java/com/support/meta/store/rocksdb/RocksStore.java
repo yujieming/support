@@ -35,8 +35,9 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
         Options options = RocksConfigKeys.rocksOptions(properties);
         String path = RocksConfigKeys.rocksPath(properties);
         String dir = RocksConfigKeys.rocksDir(properties);
-        LOG.info("init rocksdb dir : " + path + dir);
-        File file = new File(path + dir);
+        String rocksPath = path + File.separator + dir;
+        LOG.info("init rocksdb dir : " + rocksPath);
+        File file = new File(rocksPath);
         if (!file.exists()) {
             try {
                 FileUtils.createDirectories(file);
@@ -45,7 +46,7 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
             }
         }
         try {
-            rocksDB = RocksDB.open(options, path + dir);
+            rocksDB = RocksDB.open(options, rocksPath);
             RocksConfigKeys.setStore(properties, this);
         } catch (RocksDBException e) {
             LOG.error("init RocksDB error", e);
@@ -111,18 +112,31 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
 
         private RocksIterator rocksIterator;
 
+        private ByteString keyPrefix;
+
         public Itr(ByteString keyPrefix) {
             rocksIterator = rocksDB.newIterator();
             rocksIterator.seek(keyPrefix.toByteArray());
+            this.keyPrefix = keyPrefix;
         }
 
 
         @Override
         public boolean hasNext() {
-            boolean valid = rocksIterator.isValid();
-            if (valid)
+            boolean valid = false;
+            boolean hasKey = false;
+            do {
+                valid = rocksIterator.isValid();
+                if (!valid) {
+                    return false;
+                }
+                hasKey = ByteString.copyFrom(rocksIterator.key()).startsWith(this.keyPrefix);
+                if (!hasKey) {
+                    rocksIterator.next();
+                    continue;
+                }
                 return true;
-            return false;
+            } while (true);
         }
 
         @Override
@@ -136,33 +150,25 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
         }
     }
 
-
-    public static void main(String[] args) {
-        RocksStore rocksStore = new RocksStore(new StateMachineProperties());
-
-        rocksStore.watch(ByteString.copyFromUtf8("1"), obj -> {
-            System.out.println(obj.toString());
-        });
-
-        rocksStore.watchOnce(ByteString.copyFromUtf8("2"), obj -> {
-            System.out.println(obj.toString());
-        });
-
-        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("1"));
-        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("2"));
-        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("3"));
-        rocksStore.delete(ByteString.copyFromUtf8("1"));
-        rocksStore.put(ByteString.copyFromUtf8("2"), ByteString.copyFromUtf8("2"));
-        rocksStore.delete(ByteString.copyFromUtf8("2"));
-        rocksStore.put(ByteString.copyFromUtf8("3"), ByteString.copyFromUtf8("3"));
-        rocksStore.put(ByteString.copyFromUtf8("4"), ByteString.copyFromUtf8("4"));
-        rocksStore.put(ByteString.copyFromUtf8("41"), ByteString.copyFromUtf8("4212"));
-        rocksStore.put(ByteString.copyFromUtf8("42"), ByteString.copyFromUtf8("42113"));
-
-        Iterator<Bucket<ByteString, ByteString>> scan = rocksStore.scan(ByteString.copyFromUtf8("4"));
-        scan.forEachRemaining(stringStringBucket -> {
-            System.out.println(stringStringBucket.getKey() + " --> " + stringStringBucket.getValue());
-        });
-
-    }
+////
+//    public static void main(String[] args) {
+//        RocksStore rocksStore = new RocksStore(new StateMachineProperties());
+//
+//        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("1"));
+//        rocksStore.put(ByteString.copyFromUtf8("12"), ByteString.copyFromUtf8("2"));
+//        rocksStore.put(ByteString.copyFromUtf8("13"), ByteString.copyFromUtf8("3"));
+//        rocksStore.delete(ByteString.copyFromUtf8("11"));
+//        rocksStore.put(ByteString.copyFromUtf8("2"), ByteString.copyFromUtf8("2"));
+//        rocksStore.delete(ByteString.copyFromUtf8("2"));
+//        rocksStore.put(ByteString.copyFromUtf8("3"), ByteString.copyFromUtf8("3"));
+//        rocksStore.put(ByteString.copyFromUtf8("4"), ByteString.copyFromUtf8("4"));
+//        rocksStore.put(ByteString.copyFromUtf8("41"), ByteString.copyFromUtf8("4212"));
+//        rocksStore.put(ByteString.copyFromUtf8("42"), ByteString.copyFromUtf8("42113"));
+//
+//        Iterator<Bucket<ByteString, ByteString>> scan = rocksStore.scan(ByteString.copyFromUtf8("1"));
+//        scan.forEachRemaining(stringStringBucket -> {
+//            System.out.println(stringStringBucket.getKey() + " --> " + stringStringBucket.getValue());
+//        });
+//
+//    }
 }

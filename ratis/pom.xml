@@ -24,7 +24,7 @@
         </dependency>
         <dependency>
             <groupId>com.support</groupId>
-            <artifactId>ratis-proto</artifactId>
+            <artifactId>proto</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.ratis</groupId>

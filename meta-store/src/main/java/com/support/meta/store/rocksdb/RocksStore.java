@@ -18,6 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RocksStore extends BaseStore<ByteString, ByteString> {
 
+    public static final ByteString SCAN_ALL = ByteString.copyFromUtf8("*");
+
     Logger LOG = LoggerFactory.getLogger(RocksStore.class);
 
     private ConcurrentHashMap<String, ColumnFamilyHandle> columnFamilies = new ConcurrentHashMap<>();
@@ -140,9 +142,16 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
 
         private ByteString keyPrefix;
 
+        private boolean scanAll = false;
+
         public Itr(String storeId, ByteString keyPrefix) {
             rocksIterator = rocksDB.newIterator(getOrCreateColumnFamily(storeId));
-            rocksIterator.seek(keyPrefix.toByteArray());
+            if (!keyPrefix.equals(SCAN_ALL)) {
+                rocksIterator.seek(keyPrefix.toByteArray());
+            } else {
+                rocksIterator.seekToFirst();
+                scanAll = true;
+            }
             this.keyPrefix = keyPrefix;
         }
 
@@ -155,6 +164,9 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
                 valid = rocksIterator.isValid();
                 if (!valid) {
                     return false;
+                }
+                if (scanAll) {
+                    return true;
                 }
                 hasKey = ByteString.copyFrom(rocksIterator.key()).startsWith(this.keyPrefix);
                 if (!hasKey) {
@@ -176,25 +188,26 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
         }
     }
 
-////
-//    public static void main(String[] args) {
-//        RocksStore rocksStore = new RocksStore(new StateMachineProperties());
-//
-//        rocksStore.put(ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("1"));
-//        rocksStore.put(ByteString.copyFromUtf8("12"), ByteString.copyFromUtf8("2"));
-//        rocksStore.put(ByteString.copyFromUtf8("13"), ByteString.copyFromUtf8("3"));
-//        rocksStore.delete(ByteString.copyFromUtf8("11"));
-//        rocksStore.put(ByteString.copyFromUtf8("2"), ByteString.copyFromUtf8("2"));
-//        rocksStore.delete(ByteString.copyFromUtf8("2"));
-//        rocksStore.put(ByteString.copyFromUtf8("3"), ByteString.copyFromUtf8("3"));
-//        rocksStore.put(ByteString.copyFromUtf8("4"), ByteString.copyFromUtf8("4"));
-//        rocksStore.put(ByteString.copyFromUtf8("41"), ByteString.copyFromUtf8("4212"));
-//        rocksStore.put(ByteString.copyFromUtf8("42"), ByteString.copyFromUtf8("42113"));
-//
-//        Iterator<Bucket<ByteString, ByteString>> scan = rocksStore.scan(ByteString.copyFromUtf8("1"));
-//        scan.forEachRemaining(stringStringBucket -> {
-//            System.out.println(stringStringBucket.getKey() + " --> " + stringStringBucket.getValue());
-//        });
-//
-//    }
+    //
+    public static void main(String[] args) {
+        RocksStore rocksStore = new RocksStore(new StateMachineProperties());
+
+
+        rocksStore.put(null, ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("1"));
+        rocksStore.put(null, ByteString.copyFromUtf8("12"), ByteString.copyFromUtf8("2"));
+        rocksStore.put(null, ByteString.copyFromUtf8("13"), ByteString.copyFromUtf8("3"));
+        rocksStore.delete(null, ByteString.copyFromUtf8("11"));
+        rocksStore.put(null, ByteString.copyFromUtf8("2"), ByteString.copyFromUtf8("2"));
+        rocksStore.delete(null, ByteString.copyFromUtf8("2"));
+        rocksStore.put(null, ByteString.copyFromUtf8("3"), ByteString.copyFromUtf8("3"));
+        rocksStore.put(null, ByteString.copyFromUtf8("4"), ByteString.copyFromUtf8("4"));
+        rocksStore.put(null, ByteString.copyFromUtf8("41"), ByteString.copyFromUtf8("4212"));
+        rocksStore.put(null, ByteString.copyFromUtf8("42"), ByteString.copyFromUtf8("42113"));
+
+        Iterator<Bucket<ByteString, ByteString>> scan = rocksStore.scan(null, ByteString.copyFromUtf8("*"));
+        scan.forEachRemaining(stringStringBucket -> {
+            System.out.println(stringStringBucket.getKey() + " --> " + stringStringBucket.getValue());
+        });
+
+    }
 }

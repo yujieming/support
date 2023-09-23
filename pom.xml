@@ -16,7 +16,7 @@
         <module>sample/filestore</module>
         <module>meta-store</module>
         <module>ratis-client</module>
-        <module>ratis-proto</module>
+        <module>proto</module>
     </modules>
 
     <properties>
@@ -64,7 +64,7 @@
             </dependency>
             <dependency>
                 <groupId>com.support</groupId>
-                <artifactId>ratis-proto</artifactId>
+                <artifactId>proto</artifactId>
                 <version>${project.support.version}</version>
             </dependency>
             <dependency>

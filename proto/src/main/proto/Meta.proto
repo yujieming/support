@@ -12,8 +12,9 @@ message MetaRequestProto{
   oneof Request{
     ListRequestProto list = 1;
     ReadRequestProto read = 2;
-    WriteRequestProto write = 3;
-    DeleteRequestProto delete = 4;
+    ListKeyRequestProto listKey = 3;
+    WriteRequestProto write = 4;
+    DeleteRequestProto delete = 5;
   }
 }
 
@@ -21,8 +22,14 @@ message MetaReplyProto{
   oneof Reply{
     ReplyProto base = 1;
     ListReplyProto list = 2;
-    ReadReplyProto read = 3;
+    ListKeyReplyProto listKey = 3;
+    ReadReplyProto read = 4;
   }
+}
+
+message ListKeyRequestProto{
+  string store = 1;
+  bytes prefix = 2;
 }
 
 message ListRequestProto{
@@ -53,6 +60,11 @@ message Meta{
 message ListReplyProto{
   ReplyProto reply = 1;
   repeated Meta metas = 2;
+}
+
+message ListKeyReplyProto{
+  ReplyProto reply = 1;
+  repeated string key = 2;
 }
 
 message ReadReplyProto{

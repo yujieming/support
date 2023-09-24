@@ -18,8 +18,10 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class MetaStoreStateMachine extends DispatchStateMachine {
 
@@ -65,6 +67,19 @@ public class MetaStoreStateMachine extends DispatchStateMachine {
                 throw new RuntimeException(e.getMessage());
             }
             switch (requestProto.getRequestCase()) {
+                case LISTKEY:
+                    ListKeyRequestProto listKey = requestProto.getListKey();
+                    Set<ByteString> keys = store.keys(listKey.getStore());
+                    Set<String> collect = null;
+                    if (Objects.nonNull(keys)) {
+                        collect = keys.stream().map(ByteString::toStringUtf8).collect(Collectors.toSet());
+                    }
+
+                    return CompletableFuture.completedFuture(MetaReplyProto.newBuilder()
+                                    .setListKey(ListKeyReplyProto.newBuilder()
+                                            .addAllKey(collect)
+                                            .build()).build())
+                            .thenApply(AbstractMessageLite::toByteString);
                 case LIST:
                     ListRequestProto list = requestProto.getList();
                     ByteString prefix = list.getPrefix();

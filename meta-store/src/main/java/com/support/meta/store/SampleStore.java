@@ -3,6 +3,8 @@ package com.support.meta.store;
 import org.apache.ratis.thirdparty.com.google.common.collect.Lists;
 
 import java.io.IOException;
+import java.text.Format;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,7 +24,7 @@ public class SampleStore<V> extends BaseStore<String, V> {
             type = OperateType.CREATE;
         }
         this.store.put(key, value);
-        this.trigger(type, key, value);
+        this.trigger(type, storeId, key, value);
     }
 
     @Override
@@ -33,7 +35,12 @@ public class SampleStore<V> extends BaseStore<String, V> {
     @Override
     protected void doDelete(String storeId, String key) {
         V remove = this.store.remove(key);
-        this.trigger(OperateType.DELETE, key, remove);
+        this.trigger(OperateType.DELETE, storeId, key, remove);
+    }
+
+    @Override
+    public Set<String> keys(String storeId) {
+        return store.keySet();
     }
 
     @Override
@@ -44,6 +51,14 @@ public class SampleStore<V> extends BaseStore<String, V> {
     @Override
     public void close() throws IOException {
         this.store = null;
+    }
+
+    @Override
+    protected String buildWatchKey(String storeId, String key) {
+        if (Objects.isNull(storeId)) {
+            return key;
+        }
+        return MessageFormat.format(FORMAT, new Object[]{storeId, key});
     }
 
     private class Itr implements Iterator<Bucket<String, V>> {

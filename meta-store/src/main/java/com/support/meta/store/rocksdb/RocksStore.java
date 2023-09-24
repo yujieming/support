@@ -12,8 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RocksStore extends BaseStore<ByteString, ByteString> {
@@ -33,7 +36,17 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     private RocksStore() {
     }
 
+    @Override
+    protected ByteString buildWatchKey(String storeId, ByteString key) {
+        if (Objects.isNull(storeId)) {
+            return key;
+        }
+        String format = MessageFormat.format(FORMAT, new Object[]{storeId, key});
+        return ByteString.copyFromUtf8(format);
+    }
+
     public RocksStore(StateMachineProperties properties) {
+        super(RocksConfigKeys.watch(properties));
         Options options = RocksConfigKeys.rocksOptions(properties);
         String path = RocksConfigKeys.rocksPath(properties);
         String dir = RocksConfigKeys.rocksDir(properties);
@@ -72,7 +85,7 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
             LOG.error("put value error", e);
             throw new RuntimeException(e.getCause());
         }
-        this.trigger(type, key, value);
+        this.trigger(type, storeId, key, value);
     }
 
     @Override
@@ -100,9 +113,24 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     }
 
     @Override
+    public Set<ByteString> keys(String storeId) {
+        ColumnFamilyHandle columnFamily = getOrCreateColumnFamily(storeId);
+        RocksIterator rocksIterator = rocksDB.newIterator(columnFamily);
+        rocksIterator.seekToFirst();
+        HashSet<ByteString> keys = new HashSet<>();
+        while (rocksIterator.isValid()) {
+            keys.add(ByteString.copyFrom(rocksIterator.key()));
+            rocksIterator.next();
+        }
+
+        return keys;
+    }
+
+    @Override
     protected Iterator<Bucket<ByteString, ByteString>> doScan(String storeId, ByteString keyPrefix) {
         return new Itr(storeId, keyPrefix);
     }
+
 
     @Override
     public void close() throws IOException {
@@ -190,7 +218,15 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
 
     //
     public static void main(String[] args) {
-        RocksStore rocksStore = new RocksStore(new StateMachineProperties());
+        StateMachineProperties stateMachineProperties = new StateMachineProperties();
+        RocksConfigKeys.setWatch(stateMachineProperties,true);
+        RocksStore rocksStore = new RocksStore(stateMachineProperties);
+
+        rocksStore.watch("null",ByteString.copyFromUtf8("1"), opt -> {
+            Bucket<ByteString, ByteString> bucket = opt.getBucket();
+            OperateType operateType = opt.getOperateType();
+            System.out.println("type : " + operateType + " : " + bucket.toString());
+        });
 
 
         rocksStore.put(null, ByteString.copyFromUtf8("1"), ByteString.copyFromUtf8("1"));
@@ -203,6 +239,11 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
         rocksStore.put(null, ByteString.copyFromUtf8("4"), ByteString.copyFromUtf8("4"));
         rocksStore.put(null, ByteString.copyFromUtf8("41"), ByteString.copyFromUtf8("4212"));
         rocksStore.put(null, ByteString.copyFromUtf8("42"), ByteString.copyFromUtf8("42113"));
+
+        Set<ByteString> keys = rocksStore.keys(null);
+        keys.forEach(key -> {
+            System.err.println("key -> " + key);
+        });
 
         Iterator<Bucket<ByteString, ByteString>> scan = rocksStore.scan(null, ByteString.copyFromUtf8("*"));
         scan.forEachRemaining(stringStringBucket -> {

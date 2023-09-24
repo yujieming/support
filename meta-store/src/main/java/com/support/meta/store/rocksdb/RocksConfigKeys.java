@@ -68,4 +68,15 @@ public interface RocksConfigKeys {
     static void setStore(StateMachineProperties properties, Store store) {
         set(properties::set, STORE, store);
     }
+
+    String WATCH = PREFIX + ".watch";
+    Boolean ROCKS_WATCH_DEFAULT = false;
+
+    static Boolean watch(StateMachineProperties properties) {
+        return properties.get(WATCH, ROCKS_WATCH_DEFAULT, Boolean.class);
+    }
+
+    static void setWatch(StateMachineProperties properties, Boolean watch) {
+        set(properties::set, WATCH, watch);
+    }
 }

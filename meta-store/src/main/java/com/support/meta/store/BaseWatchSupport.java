@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.support.meta.store.Bucket.EMPTY;
 import static com.support.meta.store.OperateType.TIMEOUT;
 
-public class BaseWatchSupport<K, V> implements WatchSupport<K, V> {
+public abstract class BaseWatchSupport<K, V> implements WatchSupport<K, V> {
 
     private final WatchTaskContainer container;
 
@@ -32,40 +32,43 @@ public class BaseWatchSupport<K, V> implements WatchSupport<K, V> {
     }
 
     @Override
-    public void watchOnce(K key, WatchHandler<K, V> handler) {
+    public void watchOnce(String storeId, K key, WatchHandler<K, V> handler) {
         if (watch) {
-            container.watch(new WatchTask(key, handler, Long.MAX_VALUE));
+            container.watch(new WatchTask(buildWatchKey(storeId, key), handler, Long.MAX_VALUE));
         }
     }
 
+
     @Override
-    public void watchOnce(K key, WatchHandler<K, V> handler, long time, TimeUnit unit) {
+    public void watchOnce(String storeId, K key, WatchHandler<K, V> handler, long time, TimeUnit unit) {
         if (watch) {
             long deadline = System.nanoTime() + unit.toNanos(time);
-            container.watch(new WatchTask(key, handler, deadline));
+            container.watch(new WatchTask(buildWatchKey(storeId, key), handler, deadline));
         }
     }
 
     @Override
-    public void watch(K key, WatchHandler<K, V> handler) {
+    public void watch(String storeId, K key, WatchHandler<K, V> handler) {
         if (watch) {
-            container.watch(new WatchTask(key, handler));
+            container.watch(new WatchTask(buildWatchKey(storeId, key), handler));
         }
     }
 
     @Override
-    public void unWatch(K key) {
+    public void unWatch(String storeId, K key) {
         if (watch) {
-            container.unWatch(key);
+            container.unWatch(buildWatchKey(storeId, key));
         }
     }
 
 
-    protected void trigger(OperateType type, K key, V value) {
+    protected void trigger(OperateType type, String storeId, K key, V value) {
         if (watch) {
-            container.trigger(type, key, value);
+            container.trigger(type, buildWatchKey(storeId, key), value);
         }
     }
+
+    protected abstract K buildWatchKey(String storeId, K key);
 
     private static class WatchTask<K, V> implements Runnable, Comparable<WatchTask<K, V>> {
 

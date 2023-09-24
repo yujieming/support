@@ -2,9 +2,17 @@ package com.support.meta.store;
 
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.Set;
 
 public abstract class BaseStore<K, V> extends BaseWatchSupport<K, V> implements Store<K, V> {
 
+
+    public BaseStore() {
+    }
+
+    public BaseStore(boolean watch) {
+        super(watch);
+    }
 
     @Override
     public boolean exist(String storeId, K key) {

@@ -13,10 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RocksStore extends BaseStore<ByteString, ByteString> {
@@ -61,12 +58,14 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
             }
         }
         try {
-            rocksDB = RocksDB.open(options, rocksPath);
+            rocksDB = openRocks(options, rocksPath);
             RocksConfigKeys.setStore(properties, this);
         } catch (RocksDBException e) {
             LOG.error("init RocksDB error", e);
+            throw new RuntimeException(e.getCause());
         }
     }
+
 
     @Override
     protected boolean doExist(String storeId, ByteString key) {
@@ -135,6 +134,24 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     @Override
     public void close() throws IOException {
         rocksDB.close();
+    }
+
+    private RocksDB openRocks(Options options, String rocksPath) throws RocksDBException {
+        List<byte[]> bytes = RocksDB.listColumnFamilies(options, rocksPath);
+        if (bytes.size() < 1) {
+            return RocksDB.open(options, rocksPath);
+        }
+        ArrayList<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
+        for (byte[] byteAry : bytes) {
+            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(byteAry));
+        }
+        ArrayList<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
+        RocksDB open = RocksDB.open(rocksPath, columnFamilyDescriptors, columnFamilyHandles);
+        for (int i = 0; i < columnFamilyHandles.size(); i++) {
+            String kvStoreId = ByteString.copyFrom(columnFamilyDescriptors.get(i).columnFamilyName()).toStringUtf8();
+            columnFamilies.put(kvStoreId, columnFamilyHandles.get(i));
+        }
+        return open;
     }
 
     private ColumnFamilyHandle getOrCreateColumnFamily(String kvStoreId) {
@@ -219,10 +236,10 @@ public class RocksStore extends BaseStore<ByteString, ByteString> {
     //
     public static void main(String[] args) {
         StateMachineProperties stateMachineProperties = new StateMachineProperties();
-        RocksConfigKeys.setWatch(stateMachineProperties,true);
+        RocksConfigKeys.setWatch(stateMachineProperties, true);
         RocksStore rocksStore = new RocksStore(stateMachineProperties);
 
-        rocksStore.watch("null",ByteString.copyFromUtf8("1"), opt -> {
+        rocksStore.watch("null", ByteString.copyFromUtf8("1"), opt -> {
             Bucket<ByteString, ByteString> bucket = opt.getBucket();
             OperateType operateType = opt.getOperateType();
             System.out.println("type : " + operateType + " : " + bucket.toString());

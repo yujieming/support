@@ -49,6 +49,7 @@ public interface RocksConfigKeys {
     String ROCKS_OPTIONS = PREFIX + ".options";
 
     Options ROCKS_OPTIONS_DEFAULT = new Options()
+            .setCreateMissingColumnFamilies(true)
             .setCreateIfMissing(true);
 
     static Options rocksOptions(StateMachineProperties properties) {

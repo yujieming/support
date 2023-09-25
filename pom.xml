@@ -17,6 +17,7 @@
         <module>meta-store</module>
         <module>ratis-client</module>
         <module>proto</module>
+        <module>meta-client</module>
     </modules>
 
     <properties>
@@ -87,12 +88,17 @@
                 <artifactId>counter</artifactId>
                 <version>${project.support.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.support</groupId>
                 <artifactId>filestore</artifactId>
                 <version>${project.support.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.support</groupId>
+                <artifactId>meta-client</artifactId>
+                <version>${project.support.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>org.apache.ratis</groupId>
